@@ -1,0 +1,35 @@
+# Phase 0 — Mac 本地依赖 (M1/M2/M3 Apple Silicon)
+# 用法:
+#   cd /Users/luopeng/Documents/GitHub/growing-big
+#   python3 -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r phase0/requirements-mac.txt
+#
+# 注意:
+#   - 不装 bitsandbytes (Metal 不支持 4-bit 量化)
+#   - 不装 flash-attn (Mac 没有 CUDA)
+#   - QLoRA 实验请在 GPU 服务器跑,见 phase0/RUNBOOK_GPU.md
+
+# 核心
+torch>=2.4.0
+transformers>=4.45.0
+tokenizers>=0.20.0
+accelerate>=0.34.0
+datasets>=3.0.0
+peft>=0.13.0          # LoRA (不含量化)
+
+# 评估
+lm-eval>=0.4.5
+
+# 数据/工具
+numpy>=1.26.0
+sentencepiece>=0.2.0
+tiktoken>=0.7.0
+einops>=0.8.0
+tqdm>=4.66.0
+matplotlib>=3.9.0
+jupyter>=1.1.0
+
+# 测试 / 代码质量
+pytest>=8.3.0
+ruff>=0.6.0

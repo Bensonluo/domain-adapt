@@ -1,0 +1,36 @@
+# Phase 0 — GPU 服务器依赖 (AutoDL / 腾讯云 / 阿里云 / RunPod)
+# 假设: Linux + CUDA 12.x + NVIDIA GPU (4090 / A100 / V100 等)
+#
+# 用法:
+#   pip install -r phase0/requirements-gpu.txt
+#   # 验证:
+#   python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+#   python -c "import bitsandbytes; print(bitsandbytes.__version__)"
+
+# 核心 (注意 torch 在大多数云镜像里已预装,可跳过这一行)
+# torch>=2.4.0
+transformers>=4.45.0
+tokenizers>=0.20.0
+accelerate>=0.34.0
+datasets>=3.0.0
+peft>=0.13.0
+trl>=0.11.0           # SFTTrainer / DPOTrainer
+
+# 量化 — QLoRA 必需
+bitsandbytes>=0.44.0
+
+# 加速 (可选,大模型训练有用)
+# flash-attn>=2.6.0    # 编译耗时长,某些镜像不需要单独装,先注释
+
+# 评估
+lm-eval>=0.4.5
+
+# 数据/工具
+numpy>=1.26.0
+sentencepiece>=0.2.0
+tiktoken>=0.7.0
+einops>=0.8.0
+tqdm>=4.66.0
+
+# 监控
+wandb>=0.18.0         # 可选: 用于训练曲线监控

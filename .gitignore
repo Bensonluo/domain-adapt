@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Models / Data / Checkpoints (大文件不进 git)
+phase0/checkpoints/
+phase0/data/raw/
+phase0/data/processed/
+phase0/results/*.bin
+phase0/results/*.pt
+phase0/results/*.safetensors
+*.bin
+*.pt
+*.safetensors
+*.pkl
+*.npy
+hf_cache/
+~/.cache/huggingface/
+
+# 实验产物
+runs/
+wandb/
+mlruns/
+lightning_logs/
+outputs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 凭证
+.env
+.env.local
+*.key
+
+# OMC
+.omc/state/
+.omc/logs/
+phase0-foundation-plan.md
+llm-domain-adaptation-master-plan.md
+/.omc
+/.claude
+phase1-deep-dive-plan.md
+phase2-integration-plan.md
+phase3-career-transition-plan.md
