@@ -62,7 +62,7 @@ python phase0/week6/dataset_prep.py --input raw_data.jsonl --output domain_sft.j
 
 ### 跑 (GPU 服务器)
 ```bash
-cd /root/workspace/growing-big/phase0/week6
+cd /root/workspace/domain-adapt/phase0/week6
 python domain_sft.py \
     --model Qwen/Qwen2.5-3B-Instruct \
     --data ../../data/processed/domain_sft.jsonl \

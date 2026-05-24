@@ -67,7 +67,7 @@
 ### 跑 (GPU 服务器)
 ```bash
 # 在 GPU 服务器上
-cd /root/workspace/growing-big/phase0/week3
+cd /root/workspace/domain-adapt/phase0/week3
 python train_full_ft.py \
     --model Qwen/Qwen2.5-1.5B-Instruct \
     --data /path/to/domain_data.jsonl \

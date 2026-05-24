@@ -11,7 +11,7 @@ nvidia-smi
 python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 
 # 安装依赖 (如果镜像里没预装 torch,就取消注释第一行)
-cd /root/workspace/growing-big   # 你上传代码的路径
+cd /root/workspace/domain-adapt   # 你上传代码的路径
 # pip install torch --index-url https://download.pytorch.org/whl/cu121
 pip install -r phase0/requirements-gpu.txt
 ```
@@ -32,12 +32,12 @@ pip install -r phase0/requirements-gpu.txt
 ```bash
 # 上传本地代码到服务器 (在项目根目录执行)
 rsync -avz --exclude='.venv/' --exclude='phase0/checkpoints/' --exclude='phase0/data/' \
-    /Users/luopeng/Documents/GitHub/growing-big/ \
-    root@your-server-ip:/root/workspace/growing-big/
+    /Users/luopeng/Documents/GitHub/domain-adapt/ \
+    root@your-server-ip:/root/workspace/domain-adapt/
 
 # 下载训练产物回本地
-rsync -avz root@your-server-ip:/root/workspace/growing-big/phase0/checkpoints/ \
-    /Users/luopeng/Documents/GitHub/growing-big/phase0/checkpoints/
+rsync -avz root@your-server-ip:/root/workspace/domain-adapt/phase0/checkpoints/ \
+    /Users/luopeng/Documents/GitHub/domain-adapt/phase0/checkpoints/
 ```
 
 ### 方式 B: 云厂商自带网盘 (AutoDL 网盘 / 腾讯云 COS)
@@ -60,7 +60,7 @@ ds = load_dataset("your-username/medical-sft-data")
 
 ```bash
 # 在 GPU 服务器上
-cd /root/workspace/growing-big/phase0/week3
+cd /root/workspace/domain-adapt/phase0/week3
 python train_full_ft.py \
     --model Qwen/Qwen2.5-1.5B-Instruct \
     --data /path/to/domain_data.jsonl \
@@ -76,7 +76,7 @@ watch -n 2 nvidia-smi
 ### Week 5-6: Qwen-3B QLoRA 训练
 
 ```bash
-cd /root/workspace/growing-big/phase0/week5
+cd /root/workspace/domain-adapt/phase0/week5
 python train_qlora.py \
     --model Qwen/Qwen2.5-3B-Instruct \
     --data /path/to/domain_data.jsonl \
@@ -95,7 +95,7 @@ python merge_adapter.py --adapter ./qlora --output ./merged
 ### Week 8: lm-eval 在训练模型上重跑
 
 ```bash
-cd /root/workspace/growing-big
+cd /root/workspace/domain-adapt
 python phase0/utils/eval_baseline.py \
     --model ./phase0/week6/merged \
     --output phase0/results/eval_after_sft.json
