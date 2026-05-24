@@ -60,37 +60,28 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, D = x.shape
 
-        # ----- TODO 1: 投影 + reshape 到 (B, H, T, D_k) -----
-        # 提示:
-        #   q = self.W_q(x)                                    # (B, T, D)
-        #   q = q.view(B, T, self.n_heads, self.d_k)           # (B, T, H, D_k)
-        #   q = q.transpose(1, 2)                              # (B, H, T, D_k)
-        # k, v 同理
-        # q, k, v = ?, ?, ?
-        raise NotImplementedError("Day 3-4 TODO 1: 实现 q/k/v 投影")
+        # ----- 投影 + reshape 到 (B, H, T, D_k) -----
 
-        # ----- TODO 2: 算 attention scores -----
-        # scores = q @ k^T / sqrt(d_k)        # (B, H, T, T)
-        # scores = ?
+        q = self.W_q(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
+        k = self.W_k(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
+        v = self.W_v(x).view(B, T, self.n_heads, self.d_k).transpose(1, 2)
 
-        # ----- TODO 3: 加 causal mask -----
+        # ----- 算 attention scores -----
+        scores = (q @ k.transpose(-2, -1)) / math.sqrt(self.d_k)        # (B, H, T, T)
+
+        # ----- 加 causal mask -----
         # mask 形状 (T, T),上三角(diagonal=1)为 True
-        # 提示: torch.triu(torch.ones(T, T, device=x.device), diagonal=1).bool()
-        # 用 scores.masked_fill(mask, float('-inf')) 屏蔽
-        # mask = ?
-        # scores = ?
+        mask = torch.triu(torch.ones(T, T, device=x.device), diagonal=1).bool()
+        scores = scores.masked_fill(mask, float('-inf'))
 
-        # ----- TODO 4: softmax + 加权求和 -----
-        # attn = softmax(scores, dim=-1)
+        # ----- softmax + 加权求和 -----
+        attn = F.softmax(scores, dim=-1)
         # out  = attn @ v                     # (B, H, T, D_k)
-        # attn = ?
-        # out  = ?
+        out  = self.dropout(attn) @ v
 
-        # ----- TODO 5: 合并 heads + 输出投影 -----
-        # 提示:
-        #   out = out.transpose(1, 2).contiguous().view(B, T, D)
-        #   return self.W_o(out)
-        # return ?
+        # ----- 合并 heads + 输出投影 -----
+        out = out.transpose(1, 2).contiguous().view(B, T, D)
+        return self.W_o(self.dropout(out))
 
 
 # ---------------------------------------------------------------------------
@@ -167,7 +158,6 @@ def test_module_runs() -> None:
         print(f"[module test] 输入 {tuple(x.shape)} → 输出 {tuple(y.shape)} ✅")
     except NotImplementedError as e:
         print(f"⚠️  你还没填 TODO: {e}")
-        print("   按注释里的提示一步步实现 Part 1 的 5 个 TODO,然后再跑。")
 
 
 if __name__ == "__main__":

@@ -31,20 +31,38 @@
 4. 阅读 `sample.py`: temperature、top-k 采样
 
 ### 对比 Week 1 — 找差异
-| 方面 | 你的 MiniGPT | nanoGPT |
-|------|-------------|---------|
-| Tokenizer | char-level | BPE (tiktoken) |
-| Weight init | N(0, 0.02) 全部 | 残差投影缩放 1/√N |
-| LR schedule | 固定 | warmup + cosine decay |
-| Attention | F.scaled_dot_product_attention | Flash Attention (可选) |
 
-这个对比表是你的核心笔记,能画出来说明你理解了。
+#### 逐模块对比
 
-### 交付物
-- `phase0/notes/week2_nanogpt_reading.md` — 逐行注释笔记
-- `phase0/notes/week2_key_concepts.md` — 5 个关键概念整理
+| 方面 | Week 1 MiniGPT | Week 2 nanoGPT | 差异原因 |
+|------|---------------|----------------|---------|
+| **Tokenizer** | char-level (65 vocab) | BPE tiktoken (50304 vocab) | BPE 信息密度高，同样文本 token 数少 3-4x，训练更快 |
+| **vocab_size** | 65 (字符集大小) | 50304 (pad 到 64 倍数) | GPU tensor core 要求维度对齐，50304 而非 50257 |
+| **Weight init** | N(0, 0.02) 全部统一 | N(0, 0.02) + 残差投影缩放 `1/√(2·n_layer)` | 深层网络残差通路方差会累积，缩放保证前向/反向方差稳定 |
+| **LR schedule** | 固定 3e-4 + 线性 warmup | warmup + cosine decay 到 min_lr | cosine decay 让模型后期收敛更稳定 |
+| **Attention** | 手写 QK^T + mask + softmax | `F.scaled_dot_product_attention` (Flash Attention 可选) | Flash Attention 不显式存 attention 矩阵，省显存 O(N) → O(√N) |
+| **QKV 投影** | 3 个独立 `nn.Linear` | 1 个合并 `nn.Linear(D, 3D)` + `chunk` | 合并后单次矩阵乘，GPU 利用率更高 |
+| **数据加载** | `torch.stack` 全量加载 | `np.memmap` 内存映射 | memmap 不用把整个数据集加载到内存，适合大语料 |
+| **混合精度** | 无 (FP32) | 支持 `torch.amp` BF16/FP16 | 显存减半 + 速度翻倍，BF16 不需要 loss scaler |
+| **梯度裁剪** | `clip_grad_norm_(max_norm=1.0)` | 同上 | 两边一样，防止某些 batch 梯度爆炸 |
+| **Weight tying** | `head.weight = tok_emb.weight` | 同上 | 共享参数省 ~25% 显存，两边的做法一致 |
+| **数据传输** | `.to(device)` | `.pin_memory().to(device, non_blocking=True)` | pin_memory + non_blocking 让 CPU→GPU 传输和计算重叠 |
+| **Checkpoint** | 保存 state_dict | 保存 best + final，按 val loss 选 best | Week 1 只保存一个，nanoGPT 保留最优 |
+| **生成采样** | temperature + multinomial | temperature + top-k + multinomial | top-k 过滤低概率 token，减少乱码 |
 
----
+#### 关键认知
+
+1. **`vocab_size=50304`** — GPT-2 BPE 词表实际 50257 个 token，但 50304 是最近的 64 倍数。GPU tensor core 按 64×64 分块矩阵乘，对齐后计算效率 ~30% 提升，多出来的 token 不用就是浪费
+
+2. **残差投影缩放** — `c_proj`（每个 Block 的 attention 输出投影和 FFN 输出投影）的 weight 初始化时除以 `1/√(2·n_layer)`。原因：每个 Block 有 2 个残差加法（attn + ffn），N 层就有 2N 次叠加，缩放让输出方差保持 ~1
+
+3. **BPE vs char-level 的实际影响**:
+   - "患者主诉头痛" char-level = 6 tokens，BPE 可能 = 2-3 tokens
+   - 同样的 `block_size=256`，BPE 能看到 3-4x 更长的语义跨度
+   - 代价：vocab 大 770x，embedding 层参数多
+
+4. **memmap vs 全量加载** — Week 1 的 tiny_shakespeare 只有 1MB 直接全加载没问题。但真实语料几百 MB 到几 GB，memmap 让操作系统按需加载，内存占用 = batch 大小而非语料大小
+
 
 ## Day 4-5: 在领域数据上训练
 

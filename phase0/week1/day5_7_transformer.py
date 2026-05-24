@@ -50,13 +50,11 @@ class MyLayerNorm(nn.Module):
         self.beta = nn.Parameter(torch.zeros(dim))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO: 实现 LayerNorm,验收时和 F.layer_norm 输出一致
-        # 提示:
-        #   mean = x.mean(dim=-1, keepdim=True)
-        #   var  = x.var(dim=-1, keepdim=True, unbiased=False)
-        #   x_hat= (x - mean) / sqrt(var + eps)
-        #   return gamma * x_hat + beta
-        raise NotImplementedError("Day 5-7 TODO: 实现 LayerNorm")
+        # 实现 LayerNorm,验收时和 F.layer_norm 输出一致
+        mean = x.mean(dim=-1, keepdim=True)
+        var  = x.var(dim=-1, keepdim=True, unbiased=False)
+        x_hat = (x - mean) / torch.sqrt(var + self.eps)
+        return self.gamma * x_hat + self.beta
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +63,7 @@ class MyLayerNorm(nn.Module):
 class CausalSelfAttention(nn.Module):
     """
     (B, T, D) → (B, T, D),内部走 multi-head + causal mask。
-    生产代码会用 F.scaled_dot_product_attention 加速,这里也用它(已经手写过 Day 3-4)。
+    生产代码会用 F.scaled_dot_product_attention 加速,这里也用它.
     """
 
     def __init__(self, d_model: int, n_heads: int, dropout: float = 0.1) -> None:
@@ -106,9 +104,8 @@ class FFN(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO: 实现 forward — 升维 → GELU → 降维 → dropout
-        # return self.dropout(self.fc2(F.gelu(self.fc1(x))))
-        raise NotImplementedError("Day 5-7 TODO: 实现 FFN.forward")
+        # 实现 forward — 升维 → GELU → 降维 → dropout
+        return self.dropout(self.fc2(F.gelu(self.fc1(x))))
 
 
 # ---------------------------------------------------------------------------

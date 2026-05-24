@@ -51,11 +51,13 @@ class LoRALinear(nn.Module):
             original_linear.bias.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO: 实现 forward
-        # original = self.original_linear(x)
-        # lora_update = (x @ self.lora_A.T @ self.lora_B.T) * self.scaling
-        # return original + lora_update
-        raise NotImplementedError("实现 LoRALinear.forward")
+        # 原始冻结权重的输出
+        original = self.original_linear(x)
+        # LoRA 增量: x 先过 A (d_in → r), 再过 B (r → d_out), 乘以 scaling
+        # x: (B, T, d_in) @ A.T: (d_in, r) → (B, T, r)
+        # (B, T, r) @ B.T: (r, d_out) → (B, T, d_out)
+        lora_update = (x @ self.lora_A.T @ self.lora_B.T) * self.scaling
+        return original + lora_update
 
 
 def inject_lora(model, target_modules=("c_attn",), rank=8, alpha=16):
@@ -63,14 +65,21 @@ def inject_lora(model, target_modules=("c_attn",), rank=8, alpha=16):
     遍历 model 的所有 module,把 target_modules 对应的 Linear/Conv1D 替换成 LoRALinear。
     GPT-2 的 attention 用 c_attn (Conv1D),不是 q_proj/v_proj。
     """
-    # TODO: 实现注入逻辑
-    # 提示:
-    #   for name, module in model.named_modules():
-    #       if any(target in name for target in target_modules):
-    #           if isinstance(module, (nn.Linear, Conv1D)):
-    #               parent_name = ...  # 用 name.rsplit('.', 1) 拆分
-    #               setattr(parent, child_name, LoRALinear(module, rank, alpha))
-    raise NotImplementedError("实现 inject_lora")
+    # 先冻结整个模型（和 PEFT 的做法一致）
+    for param in model.parameters():
+        param.requires_grad = False
+
+    # 遍历模型的所有模块,找到匹配 target_modules 的层并替换
+    # 例如 GPT-2 的 "transformer.h.0.attn.c_attn" 包含 "c_attn",就会被替换
+    for name, module in model.named_modules():
+        if any(target in name for target in target_modules):
+            if isinstance(module, (nn.Linear, Conv1D)):
+                # "transformer.h.0.attn.c_attn" → parent="transformer.h.0.attn", child="c_attn"
+                parts = name.rsplit('.', 1)
+                parent_name, child_name = parts[0], parts[1]
+                # 拿到父模块,用 LoRALinear 替换原始层
+                parent = model.get_submodule(parent_name)
+                setattr(parent, child_name, LoRALinear(module, rank, alpha))
 
 
 def count_trainable_params(model):
@@ -92,14 +101,39 @@ def main():
     print("\n--- 注入 LoRA 前 ---")
     count_trainable_params(model)
 
-    # TODO: 调用 inject_lora
-    # inject_lora(model, target_modules=("c_attn",), rank=8, alpha=16)
+    # 注入 LoRA: 把所有 attention 的 c_attn 替换为 LoRALinear
+    inject_lora(model, target_modules=("c_attn",), rank=8, alpha=16)
 
     print("\n--- 注入 LoRA 后 ---")
     count_trainable_params(model)
 
-    # TODO: 跑一个 toy 训练循环,观察 loss 下降
-    # (用一段短文本,训练 100 步即可)
+    # toy 训练循环: 用随机 token 训练 100 步,观察 loss 下降
+    vocab_size = len(tokenizer)
+    print(f"vocab_size: {vocab_size}")
+
+    # 手动造输入，跳过 tokenizer 的问题
+    torch.manual_seed(42)
+    input_ids = torch.randint(0, vocab_size, (2, 32))
+    labels = input_ids.clone()
+
+    # 只训练 LoRA 参数 (A 和 B),冻结的原始权重不参与优化
+    optimizer = torch.optim.AdamW(
+        [p for p in model.parameters() if p.requires_grad], lr=1e-3
+    )
+
+    model.train()
+    print("\n--- Toy 训练 (100 步) ---")
+    for step in range(100):
+        outputs = model(input_ids, labels=labels)
+        loss = outputs.loss
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        if step % 20 == 0:
+            print(f"step {step:3d}: loss = {loss.item():.4f}")
+
+    print(f"step  99: loss = {loss.item():.4f}")
+    print("\nLoRA 训练完成 ✅")
 
 
 if __name__ == "__main__":
