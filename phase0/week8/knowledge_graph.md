@@ -51,22 +51,24 @@ LLM Domain Adaptation
     └── AdamW 更新规则 (解耦 weight decay)
 ```
 
-## 能力自检
-
-- [ ] 能手写 backward_manual 并和 autograd 一致
-- [ ] 能白板画出 attention 的完整 shape 流
-- [ ] 能解释 Pre-LN 为什么比 Post-LN 稳定
-- [ ] 能推导 LoRA 的 SVD 视角
-- [ ] 能解释 QLoRA 的三个关键技术
-- [ ] 能手写 mask_labels 函数
-- [ ] 能推导 DPO loss (从 RLHF 到闭式)
-- [ ] 能解释 AdamW 和 Adam 的区别
-- [ ] 能设计完整的人工评估 rubric
-- [ ] 能用 lm-eval 跑 benchmark 并解读结果
-
 ## Gap 清单
 
-TODO: 完成 Phase 0 后填写
-- [ ] Gap 1: ...
-- [ ] Gap 2: ...
-- [ ] Gap 3: ...
+### Gap 1: DPO/RLHF 缺乏实战经验
+- **现状**: 推导了 DPO loss 的完整数学（Week 7），理解 Bradley-Terry 模型和配分函数消除
+- **Gap**: 没有实际跑过 DPO 训练。4bit-QLoRA 项目的 `config/dpo.py` 和 `scripts/train_dpo.py` 已搭好框架但未执行
+- **Phase 1 计划**: 用 master_data 的匹配结果构造偏好对（正确匹配 vs 错误匹配），跑 DPO 训练
+
+### Gap 2: 分布式训练和大规模部署
+- **现状**: 所有训练都在单机完成（Mac 64GB MLX / 单卡 GPU）
+- **Gap**: 没有 DeepSpeed / FSDP / 多卡训练经验；没有 vLLM / TGI 等生产部署经验
+- **Phase 1 计划**: 学习 FSDP 基础，尝试在多 GPU 环境训练更大模型
+
+### Gap 3: 开放域评估能力不足
+- **现状**: 评估体系以结构化任务为主（Top-1 accuracy、exact match）
+- **Gap**: 没有实践过 LLM-as-Judge 的完整流程（只有代码模板）；没有做过人工评估 IAA
+- **Phase 1 计划**: 在开放域任务（如医疗问答）上实践 LLM-as-Judge + 人工评估
+
+### Gap 4: 数据工程深度不够
+- **现状**: 用 Python 脚本做数据清洗和负采样，流程可用
+- **Gap**: 没有系统化的数据质量监控（如自动化的数据分布分析、污染检测、难度分级）
+- **Phase 1 计划**: 建立数据质量 dashboard，自动化难度分级和去重检测

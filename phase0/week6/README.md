@@ -16,7 +16,7 @@
 > **思考**: 为什么数据去重 (deduplication) 这么重要? 训练集和测试集有重复会怎样? (提示: 测试集污染 → 虚高的评估分数)
 
 ### 做什么
-1. 从工作中提取领域对话数据(脱敏),或用公开数据集
+1. 合成领域对话数据,或用公开数据集
 2. 数据格式化: 统一成 JSONL 格式
 3. 数据清洗: 去重(MD5)、过滤低质量(长度<10字)、格式校验
 4. 构建 2000-5000 条高质量领域指令数据
@@ -119,3 +119,52 @@ python phase0/week6/eval_manual.py \
 - [ ] 人工评估记录 (20 题 × 2 模型对比)
 - [ ] 训练 loss 曲线截图
 - [ ] 自测题能回答 2/3 以上
+
+---
+
+## 成果
+
+本项目所有 Week 6 交付物已在实战项目 [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training) 中完成。
+
+**数据准备** — 从 14K+ 药品知识库生成 58K+ Alpaca 格式训练样本，含硬负采样、噪声注入、按药品编码零泄漏划分 train/val/test。见 [prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/prepare_data.py) 和 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/train/train.json)。
+
+**QLoRA 训练** — 支持 7 个预设（mac/poc/full 等），覆盖 Qwen3-1.7B 到 Qwen3-14B，含 MLflow + TensorBoard 追踪。见 [train_medical_entity.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/scripts/train_medical_entity.py) 和 [训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/config/domains/medical_entity.py)。
+
+**评估** — 分难度 accuracy 对比（base vs finetuned），10+ 次评估迭代。最新结果：hard 难度 66.7%。见 [evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/evaluate.py) 和 [评估结果](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/results/executive_summary_20260528_193258.md)。
+
+### 详细说明
+
+#### 数据工程
+
+[prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/prepare_data.py) 从 14K+ 药品知识库 (`drug_knowledge_base.json`) 动态生成训练样本。每条样本包含一个查询实体和多个候选实体，模型需要从候选中选出正确的标准名称。
+
+负采样策略分三层：
+1. **同通用名不同剂型**（最强硬负例）— 如"恩替卡韦片" vs "恩替卡韦胶囊"
+2. **名称前缀相似** — 如"阿魏酸钠注射液" vs "阿魏酸钠片"
+3. **随机负例** — 补充多样性
+
+数据增强包括噪声注入（随机替换/删除/插入字符），模拟真实场景中的错别字。按药品编码划分 train/val/test，确保训练集和测试集的药品完全不重叠，避免数据泄漏。
+
+最终产出 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/train/train.json)（58K+ 条）、[val.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/val/val.json)（7K+ 条）、[test_instruction.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/test/test_instruction.json)（7K+ 条），远超 Week 6 要求的 2000-5000 条。
+
+#### QLoRA 训练
+
+[训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/config/domains/medical_entity.py) 提供 7 个预设，适配不同硬件和模型规模：
+
+| 预设 | 模型 | LoRA r/alpha | 硬件 |
+|---|---|---|---|
+| mac | Qwen3-14B | 64/128 | Mac 64GB |
+| mac-8b | Qwen3-8B | 32/64 | Mac 64GB |
+| mac-small | Qwen3-4B | 32/64 | Mac 64GB |
+| mac-35-4b | Qwen3.5-4B | 32/64 | Mac 64GB |
+| mac-2b | Qwen3.5-2B | 16/32 | Mac 64GB |
+| mac-1b | Qwen3-1.7B | 16/32 | Mac 64GB |
+| poc | Qwen3-4B 4bit | 32/64 | 8GB GPU |
+
+所有预设的 target_modules 包含 `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj`，覆盖注意力层和 FFN 层。训练使用 cosine LR scheduler + 5% warmup，集成 [MLflow](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/src/tracking/mlflow_tracker.py) 和 TensorBoard 追踪。Adapter 合并通过 [merge_lora.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/scripts/merge_lora.py) 完成。
+
+#### 评估
+
+[evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/evaluate.py) 对测试集逐条推理，与启发式基线对比。评估报告由 [report.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/eval/report.py) 自动生成，包含分难度 accuracy、成本估算（延迟/吞吐量/日处理量）。
+
+最新评估（2026-05-28）：finetuned model hard 难度 accuracy 66.7%，与启发式基线 67.3% 接近。当前瓶颈在困难样本（错别字/口语化表述），后续可通过增强噪声注入、增加训练轮次或升级基座模型来提升。

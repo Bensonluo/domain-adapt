@@ -116,8 +116,20 @@ python phase0/week5/loss_masking.py
 
 ## 验收清单
 
-- [ ] 3 种 template 对比实验
-- [ ] loss masking 手写实现 + 对比实验
-- [ ] 数据质量 vs 数量实验报告
-- [ ] 个人 SFT Checklist
-- [ ] 自测题能回答 2/3 以上
+- [x] 3 种 template 对比实验
+- [x] loss masking 手写实现 + 对比实验
+- [x] 数据质量 vs 数量实验报告
+- [x] 个人 SFT Checklist
+- [x] 自测题能回答 2/3 以上
+
+---
+
+## 成果
+
+**Chat Template 对比** — [chat_template_compare.py](chat_template_compare.py) 对比 Qwen/ChatML、Llama-3、Mistral 三种 template 对同一条医疗对话的 tokenize 结果，分析 token 数差异、system 消息处理方式、模板错配的后果。见 [chat_template.ipynb](chat_template.ipynb) 的交互式对比。
+
+**Loss Masking 实现** — [loss_masking.py](loss_masking.py) 手写 mask_labels 函数：找到 `<|im_start|>assistant\n` 的 token 序列，只保留其后 token 的 label，其余设为 -100。这是 SFT 的核心 trick — 不做 masking 模型会浪费梯度学 prompt 部分。
+
+**完整 SFT 训练脚本** — [sft_trainer.py](sft_trainer.py) 整合 chat template + loss masking + QLoRA，支持 Qwen2.5-3B-Instruct 的完整 SFT 流程。配置：LoRA r=16, alpha=32, target_modules=q/k/v/o_proj, NF4 量化。
+
+**SFT 最佳实践 Checklist** — [sft_checklist.md](sft_checklist.md) 整理了数据（质量>数量、去重、过滤）、训练（LR 2e-4 QLoRA / 5e-5 全量、1-3 epochs）、LoRA 配置（rank 8-16、alpha=rank 或 2x）的最佳实践。

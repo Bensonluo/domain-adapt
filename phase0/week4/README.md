@@ -112,8 +112,24 @@ python phase0/week4/compare_lora.py
 
 ## 验收清单
 
-- [ ] LoRA + QLoRA 论文精读笔记
-- [ ] 手写 LoRA 实现 (GitHub 提交)
-- [ ] toy 对比实验记录 (手写 vs PEFT)
-- [ ] SVD 视角 rank 选择推导
-- [ ] 自测题能回答 2/3 以上
+- [x] LoRA + QLoRA 论文精读笔记
+- [x] 手写 LoRA 实现 (GitHub 提交)
+- [x] toy 对比实验记录 (手写 vs PEFT)
+- [x] SVD 视角 rank 选择推导
+- [x] 自测题能回答 2/3 以上
+
+---
+
+## 成果
+
+**LoRA 论文精读** — 理解低秩适配的核心思想：W_new = W_0 + (α/r) × B @ A，B 初始化为 0 保证训练开始时输出不变，A 用 Kaiming 初始化。见 [lora_notes.md](lora_notes.md)。
+
+**QLoRA 论文精读** — 三大关键技术：NF4（按正态分布设计分位数，适配 LLM 权重分布）、Double Quantization（对量化常数再量化节省显存）、Paged Optimizer（避免显存峰值）。见 [qlora_notes.md](qlora_notes.md)。
+
+**手写 LoRA 实现** — [lora_from_scratch.py](lora_from_scratch.py) 实现了 LoRALinear.forward 和 inject_lora，注入到 GPT-2 124M 的 c_attn 层。处理了 GPT-2 的 Conv1D（weight shape [d_in, d_out] 与 nn.Linear 的 [d_out, d_in] 相反）。
+
+**手写 vs PEFT 对比实验** — [compare_lora.py](compare_lora.py) 对比手写 LoRA 和 PEFT 库 LoRA 在相同数据上的 loss 下降曲线，结果一致。见 [compare_lora.png](compare_lora.png)。
+
+**SVD 视角** — [lora.ipynb](lora.ipynb) 可视化预训练权重的奇异值衰减曲线，验证低秩假设：前 8-16 个奇异值捕获了绝大部分能量，rank=8 通常够用。
+
+**PEFT 源码对比** — 阅读官方 `peft/tuners/lora/layer.py`，对比手写版的 3 个差异：多适配器支持、输入类型对齐、merge_and_unload 机制。见 [week4_peft_source_notes.md](../results/week4_peft_source_notes.md)。

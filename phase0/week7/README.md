@@ -236,3 +236,17 @@ v̂_t = v_t / (1 - β2^t)                     # 偏差修正
 3. **AdamW 把 weight decay 从梯度中解耦出来,为什么这比 Adam+L2 更好?**
 
 > 答案: 1) Q·K 的方差随 d_k 增大而增大,softmax 趋近 one-hot,梯度趋近零,训练停滞。2) 利用 Bradley-Terry 成对偏好模型消掉了不可计算的配分函数 Z(x)。3) Adam+L2 的 weight decay 会经过 m/v 的自适应缩放,对不同参数 decay 不均匀;AdamW 的 decay 直接作用于参数,所有参数 decay 比例一致。
+
+---
+
+## 成果
+
+**推导 1: Self-Attention 反向传播** — 从 O = softmax(QK^T/√d_k)V 出发，逐步求 ∂L/∂V、∂L/∂P、∂L/∂S、∂L/∂Q、∂L/∂K，解释 √d_k 缩放的数学依据（方差随 d_k 线性增长导致 softmax 尖锐化）。见 [derivation_attention.md](derivation_attention.md)。
+
+**推导 2: Softmax + Cross-Entropy 梯度** — 用两种方法（直接展开法、链式法则法）推导出 ∂L/∂z = p - y_onehot，即"概率减 one-hot = 预测误差"。附带 log-sum-exp 数值稳定性分析。见 [derivation_softmax_ce.md](derivation_softmax_ce.md)。
+
+**推导 3: LoRA 的 SVD 视角** — 从 SVD 分解和 Eckart-Young 定理出发，解释低秩假设的数学依据：预训练权重的奇异值衰减快，微调变化量 ΔW 的衰减更快，因此 r=8 通常足够。详解 alpha/rank 的解耦设计。见 [derivation_lora_svd.md](derivation_lora_svd.md)。
+
+**推导 4: DPO Loss** — 从 RLHF 的 KL 约束优化目标出发，经闭式解、反解 reward、Bradley-Terry 模型三步，消掉不可计算的配分函数 Z(x)，得到 DPO 闭式 loss。含梯度分析和代码实现。见 [derivation_dpo.md](derivation_dpo.md)。
+
+**推导 5: AdamW 更新规则** — 从 SGD 到 Adam（动量+自适应学习率），再到 Adam+L2 的缺陷（weight decay 被自适应缩放扭曲），最后到 AdamW 的解耦设计。含数值示例和 LLM 训练场景的分析。见 [derivation_adamw.md](derivation_adamw.md)。
