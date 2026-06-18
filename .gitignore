@@ -19,6 +19,8 @@ env/
 phase0/checkpoints/
 phase0/data/raw/
 phase0/data/processed/
+# phase1 demo CPT 语料 (脚本可再生, 和 phase0/data 一致)
+phase1/data/
 phase0/results/*.bin
 phase0/results/*.pt
 phase0/results/*.safetensors
@@ -51,6 +53,9 @@ Thumbs.db
 .env
 .env.local
 *.key
+
+# 论文 PDF (arxiv 公开可重新下载, 大文件不进 git 历史)
+**/papers/*.pdf
 
 # OMC
 .omc/state/
