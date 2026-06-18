@@ -1,0 +1,80 @@
+# ============================================================================
+# MLX-LM CPT 训练配置 (Apple Silicon / M3 Max)
+# ============================================================================
+# 字段名 100% 来自 mlx_lm/lora.py 的 CONFIG_DEFAULTS (源码确认, 不是猜的)。
+#
+# 用法 (二选一):
+#   A) 直接用 mlx-lm CLI:
+#        mlx_lm.lora --config phase1/week11/cpt_config.yaml
+#        # 或: python -m mlx_lm lora --config phase1/week11/cpt_config.yaml
+#
+#   B) 经 train_cpt.py (推荐: 自动衔接 week10 数据 + 实时 loss 曲线 + 生成测试):
+#        python phase1/week11/train_cpt.py
+#        # train_cpt.py 用 CLI flags 覆盖默认值, 本文件作为参考/可复现记录
+#
+# 前置 (训练前一次性):
+#   pip install "mlx-lm[train]"
+#   python phase1/week10/data_prep_cpt.py   # 产出 cpt_70-30.jsonl 等
+#   python phase1/week11/train_cpt.py --no-generate --iters 1   # 触发数据转 MLX 格式
+# ============================================================================
+
+# 模型: 全量 CPT 必须非量化原版 (量化版只能走 QLoRA 路径)
+#   LoRA-CPT 省内存可选 mlx-community/Qwen3.5-0.8B-4bit
+model: Qwen/Qwen3.5-0.8B
+
+# 训练开关 (true = 训练; 仅评估时设 false)
+train: true
+
+# 数据目录 (需含 train.jsonl + valid.jsonl)
+# train_cpt.py 自动从 week10 的 cpt_70-30.jsonl 转换到此目录
+data: phase1/data/processed/cpt_mlx/70_30
+
+# 微调类型:
+#   full = 全量 CPT (解冻指定层的所有参数, 不加 LoRA adapter)
+#   lora = LoRA-CPT (省内存, 只训 adapter; 跑得动更大模型)
+#   dora = DoRA-CPT
+fine_tune_type: full
+
+# 解冻层数:
+#   -1  = 全部层 (真正的全量 CPT)
+#   16  = 只解冻最后 16 层 (full 模式默认值, 省内存但非全量)
+num_layers: -1
+
+# 迭代数 (demo 200 验证流程; 真实 CPT 通常 1万-5万步, 看 loss 收敛)
+iters: 200
+
+# batch + 梯度累积 (等效大 batch 不增内存; M3 Max 跑 0.8B 全量可用 batch 4)
+batch_size: 4
+grad_accumulation_steps: 1
+
+# 学习率: CPT 比预训练小 10-100 倍
+#   参考: BloombergGPT ~6e-5 (50B from scratch 的后期)
+#         Don't Stop Pretraining 阶梯式 (domain lr 比 general 小 10-20x)
+learning_rate: 1.0e-5
+
+# 序列长度 (匹配 week10 chunk_size 2048)
+max_seq_length: 2048
+
+# 评估频率:
+#   steps_per_report=10 → 每 10 步打印 train loss (实时曲线的 csv 数据源)
+#   steps_per_eval=50   → 每 50 步算 val loss + ppl
+#   val_batches=25      → 每次评估抽 25 个 batch
+steps_per_report: 10
+steps_per_eval: 50
+val_batches: 25
+
+# 梯度检查点 (省内存, M3 Max 跑全量建议开; 慢约 20-30%)
+grad_checkpoint: true
+
+# 输出 (训练权重存这里)
+adapter_path: phase1/results/week11_cpt_pure/adapters
+save_every: 100
+
+# 随机种子 (可复现)
+seed: 42
+
+# 实时 loss 曲线: web dashboard (取消注释启用)
+#   swanlab: 国内友好, 首次可离线模式 (pip install swanlab)
+#   wandb:   国际通用 (pip install wandb, 需账号)
+# report_to: swanlab
+# project_name: domain-adapt-week11-cpt
