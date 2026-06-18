@@ -48,9 +48,10 @@
 
 ### 交付物
 
-- [ ] `derivation_dpo_detailed.md` — DPO loss 完整推导（从 RLHF → Bradley-Terry → 闭式解）
-- [ ] `derivation_grpo.md` — GRPO 机制整理 + 与 DPO 对比
-- [ ] `notes/week13_dpo_grpo_comparison.md` — 5 篇论文笔记 + 方法对比
+- [x] `derivation_dpo_detailed.md` — DPO loss 完整推导（RLHF → 闭式解 → 反解 reward → BT 抵消 Z(x)）— [derivation_dpo_detailed.md](derivation_dpo_detailed.md)
+- [x] `derivation_grpo.md` — GRPO 机制（砍 critic + group baseline）+ 与 DPO 对比 — [derivation_grpo.md](derivation_grpo.md)
+- [x] `notes/week13_dpo_grpo_comparison.md` — 5 篇论文笔记 + 方法对比 + 选型决策框架 — [../notes/week13_dpo_grpo_comparison.md](../notes/week13_dpo_grpo_comparison.md)
+- [x] 5 篇论文 PDF（对照用）— [papers/](papers/)
 
 ---
 
@@ -60,13 +61,13 @@
 2. **GRPO 和 DPO 在是否需要 reference model 上的差异是什么？为什么？**
 3. **Reward hacking 是什么？在 GRPO 中怎么检测？**
 
-> 答案: 1) 通过 Bradley-Terry 模型，将偏好概率表示为 reward 差的 sigmoid，然后用 reward 函数的反解 r(x,y) = β log(π/π_ref) 代入，Z(x) 在分子分母中抵消。2) DPO 需要 reference model 做 KL 约束（防止策略偏离太远）；GRPO 用 group-level reward normalization 代替绝对 reward，在 group 内相对排序，不需要 reference model。3) Reward hacking = reward 分数上升但实际质量下降。检测方法：定期人工抽样评分，如果 reward 上升但人工分下降 → hacking。
+> 答案: 1) 通过 Bradley-Terry 模型，将偏好概率表示为 reward 差的 sigmoid，然后用 implicit reward r(x,y) = β log(π/π_ref) + β log Z(x) 代入 r(x,yw) − r(x,yl)，两个 y 共享同一个 x，Z(x) 一加一减抵消。2) **两者都有 reference model**（常见误解是 GRPO 没有）。差异在角色：DPO 以 logprob 比值**隐式**进 loss；GRPO 以独立 KL 项**显式**进 loss。GRPO 砍掉的是 **value/critic 网络**（用 group baseline 代替），不是 reference model。3) Reward hacking = reward 分数上升但实际质量下降。检测：holdout 人工抽样（reward↑ 但人工分↓ = hacking）、多 RM 交叉验证、监控 KL 飙升；根治用可验证的规则 reward（R1 做法）。
 
 ---
 
 ## 验收清单
 
-- [ ] 5 篇论文精读完成（DPO/GRPO 必读，IPO/KTO 背景）
-- [ ] DPO loss 手推完成
-- [ ] 能对比 GRPO vs DPO 的 3 个本质差异
-- [ ] 能解释 reward hacking + 检测方法
+- [x] 5 篇论文精读完成（DPO/GRPO 必读，IPO/KTO 背景，R1 应用）
+- [x] DPO loss 手推完成（4 步：闭式解 → 反解 reward → BT 抵消 Z → loss）
+- [x] 能对比 GRPO vs DPO 的 3 个本质差异（采样范式 / reward 来源 / reference 角色）
+- [x] 能解释 reward hacking + 检测方法
