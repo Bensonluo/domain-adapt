@@ -39,10 +39,11 @@
 
 ## 交付物
 
-- [ ] `notes/week18_distilbert.md` — 论文精读笔记
-- [ ] `notes/week18_self_instruct.md` — 论文精读笔记
-- [ ] `notes/week18_zephyr.md` — 论文精读笔记
-- [ ] `notes/week18_distillation_comparison.md` — 三种方法对比表
+- [x] [`../notes/week18_distilbert.md`](../notes/week18_distilbert.md) — 论文精读笔记（triple loss + 初始化 ablation + feature distillation 本质）
+- [x] [`../notes/week18_self_instruct.md`](../notes/week18_self_instruct.md) — 论文精读笔记（四步自举 + 合成数据 trade-off）
+- [x] [`../notes/week18_zephyr.md`](../notes/week18_zephyr.md) — 论文精读笔记（dSFT + AIF + dDPO 三步管线）
+- [x] [`../notes/week18_distillation_comparison.md`](../notes/week18_distillation_comparison.md) — 三种方法对比表 + 决策框架 + 自测题解答
+- [x] 3 篇论文 PDF（对照用）— [papers/](papers/)
 
 ---
 
@@ -52,10 +53,12 @@
 2. **Feature distillation 为什么要加 projection layer？**
 3. **On-policy distillation 为什么效果最好但最贵？**
 
+> 答案: 1) 训练算法几乎相同（都是交叉熵 SFT），区别在**数据来源与信息量**：普通 SFT 用人工标注的 hard label（1 bit 信息），response distillation 用 teacher 生成的输出（可拿 soft label，携带"类间关系"的 dark knowledge）；成本上，模型造数据可无限放大、远比人工便宜，天花板是 teacher 能力而非标注预算。2) 因为 teacher 和 student 的 hidden state **维度通常不同**（如 768d vs 384d），无法直接算距离；projection layer 是一个可学习的线性映射 `W: student_dim → teacher_dim`，把 student 表示投影到 teacher 空间再对齐，从而**解耦 student 架构**（允许砍宽度）。DistilBERT 不需要 projection，是因为它故意保持 hidden size=768 与 BERT 相同，只砍层数。3) **效果最好**因为 student 在自己的分布上探索（on-policy），能发现 teacher 没示范的好路径，本质是 RL，**能超越 teacher**（R1 的 aha moment）；**最贵**因为：多轮迭代（生成→打分→训练循环）、大量采样（每样本生成 N 条只用相对信号）、需要 reward（规则 reward 限可验证任务，神经 RM 有 hacking 风险）、在线生成（GPU 开销大）。详见 [comparison 第六节](../notes/week18_distillation_comparison.md)。
+
 ---
 
 ## 验收清单
 
-- [ ] 3 篇论文精读完成
-- [ ] 三种蒸馏方法对比表完成
-- [ ] 能解释每种方法的适用场景
+- [x] 3 篇论文精读完成（DistilBERT / Self-Instruct / Zephyr）
+- [x] 三种蒸馏方法对比表完成（Response / Feature / On-Policy + 决策框架）
+- [x] 能解释每种方法的适用场景 → 见 [comparison 第四节](../notes/week18_distillation_comparison.md)
