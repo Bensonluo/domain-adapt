@@ -70,10 +70,10 @@
 
 ## 交付物
 
-- [ ] `notes/week9_dont_stop_pretraining.md` — 论文精读笔记
-- [ ] `notes/week9_huatuoGPT_II.md` — 论文精读笔记
-- [ ] `notes/week9_bloombergGPT.md` — 论文精读笔记
-- [ ] `notes/week9_cpt_concepts.md` — CPT 关键概念整理
+- [x] [`../notes/week9_dont_stop_pretraining.md`](../notes/week9_dont_stop_pretraining.md) — 论文精读笔记
+- [x] [`../notes/week9_huatuoGPT_II.md`](../notes/week9_huatuoGPT_II.md) — 论文精读笔记
+- [x] [`../notes/week9_bloombergGPT.md`](../notes/week9_bloombergGPT.md) — 论文精读笔记
+- [x] [`../notes/week9_cpt_concepts.md`](../notes/week9_cpt_concepts.md) — CPT 关键概念整理（三篇串联成决策框架）
 
 ---
 
@@ -89,7 +89,7 @@
 
 ## 验收清单
 
-- [ ] 3 篇论文精读笔记完成
-- [ ] 能回答"为什么 CPT 学习率要比预训练小 10-100 倍？"
-- [ ] 能画出 CPT 数据混合比例 vs 遗忘率的预期 trade-off 曲线
-- [ ] CPT 关键概念整理完成
+- [x] 3 篇论文精读笔记完成
+- [x] 能回答"为什么 CPT 学习率要比预训练小 10-100 倍？" → 见 [cpt_concepts 第四节](../notes/week9_cpt_concepts.md)
+- [x] 能画出 CPT 数据混合比例 vs 遗忘率的预期 trade-off 曲线 → 见 [cpt_concepts 第三节](../notes/week9_cpt_concepts.md)
+- [x] CPT 关键概念整理完成
