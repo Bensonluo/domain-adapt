@@ -1,24 +1,42 @@
 """
-Phase 1 Week 12: 灾难性遗忘评估
+Phase 1 Week 12: 灾难性遗忘评估 (catastrophic forgetting)
+==========================================================
 
-对比 CPT 前后的通用 benchmark 分数，量化遗忘率。
+对比 CPT 前后的**通用**任务分数, 量化遗忘率。与 eval_cpt.py (测领域提升) 配对。
 
-Usage:
-    python phase1/week12/eval_forgetting.py \
-        --baseline Qwen/Qwen2.5-3B \
-        --finetuned phase1/results/week12_cpt_70_30/
+forgetting_rate = (baseline - cpt) / baseline:
+  - 正值 = 遗忘 (通用能力下降)
+  - 负值 = 意外提升 (数据混合里含通用数据时常见, 是好事)
+
+看的是 **delta vs base** (0.8B 绝对分接近 25% 随机基线)。完整 trade-off 评估
+(forgetting vs domain gain) 留 week13 真数据重训多配比后。
+
+用法:
+    python phase1/week12/eval_forgetting.py \\
+        --baseline models/Qwen3.5-0.8B-Base-ms \\
+        --finetuned phase1/results/week12_eval/week11_cpt_fused
+
+    # 复用上次结果:
+    python phase1/week12/eval_forgetting.py \\
+        --baseline phase1/results/week12_eval/base/scores.json \\
+        --finetuned phase1/results/week12_eval/cpt_week11/scores.json
 """
 
 import argparse
 import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _eval_core import resolve_scores, resolve_tasks
 
 
 def compute_forgetting_rate(before: dict, after: dict) -> dict:
-    """计算遗忘率"""
+    """计算遗忘率: (baseline - cpt) / baseline。正=遗忘, 负=意外提升。"""
     results = {}
     for task in before:
         if task in after:
-            rate = (before[task] - after[task]) / before[task]
+            rate = (before[task] - after[task]) / before[task] if before[task] > 0 else 0
             results[task] = {
                 "before": before[task],
                 "after": after[task],
@@ -29,44 +47,49 @@ def compute_forgetting_rate(before: dict, after: dict) -> dict:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="评估灾难性遗忘")
-    parser.add_argument("--baseline", required=True, help="Base model path or eval JSON")
-    parser.add_argument("--finetuned", required=True, help="CPT model path or eval JSON")
-    parser.add_argument("--tasks", nargs="+", default=["mmlu"])
-    parser.add_argument("--output", help="Output JSON file")
+    parser = argparse.ArgumentParser(description="评估灾难性遗忘 (通用任务)")
+    parser.add_argument("--baseline", required=True, help="Base 模型路径 或 已有 scores.json")
+    parser.add_argument("--finetuned", required=True, help="CPT fused 模型路径 或 已有 scores.json")
+    parser.add_argument("--tasks", nargs="+", default=["general_cn"],
+                        help="任务组: general_cn (默认, 非医学通用) / medical_cn / medical_en")
+    parser.add_argument("--limit", type=int, default=100, help="每任务样本上限 (0.8B 控时)")
+    parser.add_argument("--num-shots", type=int, default=0)
+    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--seed", type=int, default=123)
+    parser.add_argument("--output", help="输出 JSON")
     args = parser.parse_args()
 
-    # 1. [YOUR CODE] 评估基线模型
-    # 提示：
-    #   - 调用 utils/eval_benchmark.py 的 run_lm_eval()
-    #   - 或直接用 subprocess 跑 lm-eval 命令行
-    #   - 记录每个任务的分数 {task_name: score}
-    #   - 思考：MMLU 的哪些 subset 最能反映"通用知识"？
-    baseline_scores = None  # TODO: 跑 benchmark
+    tasks = resolve_tasks(args.tasks)
+    print(f"\n[tasks] {tasks}")
 
-    # 2. [YOUR CODE] 评估 CPT 模型
-    # 提示：用同样的 tasks 评估 CPT 后的模型
-    cpt_scores = None  # TODO: 跑 benchmark
+    base_scores = resolve_scores(args.baseline, tasks, "base",
+                                 args.limit, args.num_shots, args.batch_size, args.seed)
+    cpt_scores = resolve_scores(args.finetuned, tasks, "cpt_week11",
+                                args.limit, args.num_shots, args.batch_size, args.seed)
 
-    # 3. 计算遗忘率（已实现）
-    # 公式：forgetting_rate = (baseline - cpt) / baseline
-    # 正值 = 遗忘，负值 = 意外提升
-    forgetting = compute_forgetting_rate(baseline_scores, cpt_scores)
+    # 只算该任务组的子集 (scores json 可能含全量子集, 避免跨组串扰)
+    base_scores = {t: base_scores[t] for t in tasks if t in base_scores}
+    cpt_scores = {t: cpt_scores[t] for t in tasks if t in cpt_scores}
 
-    # 4. [YOUR CODE] 输出报告
-    # 提示：
-    #   - 打印每个任务的 before/after/forgetting_rate
-    #   - 计算平均遗忘率
-    #   - 思考：遗忘率 > 20% 时你会怎么调整？
+    forgetting = compute_forgetting_rate(base_scores, cpt_scores)
+
     print("\n" + "=" * 50)
-    print("Catastrophic Forgetting Report")
+    print("Catastrophic Forgetting Report (中文通用)")
     print("=" * 50)
-    for task, result in forgetting.items():
-        print(f"  {task:20s} | before: {result['before']:.4f} | after: {result['after']:.4f} | rate: {result['forgetting_rate']:+.2%} | {result['direction']}")
+    for task, r in forgetting.items():
+        print(f"  {task:40s} | before {r['before']:.3f} → after {r['after']:.3f} "
+              f"| rate {r['forgetting_rate']:+.2%} | {r['direction']}")
+    avg = None
+    if forgetting:
+        avg = sum(r["forgetting_rate"] for r in forgetting.values()) / len(forgetting)
+        print(f"  {'— 平均 —':40s} | rate {avg:+.2%}")
 
     if args.output:
-        with open(args.output, "w") as f:
-            json.dump(forgetting, f, indent=2)
+        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.output, "w", encoding="utf-8") as f:
+            json.dump({"task_group": args.tasks, "limit": args.limit,
+                       "forgetting": forgetting, "avg_rate": avg},
+                      f, ensure_ascii=False, indent=2)
         print(f"\nReport saved to {args.output}")
 
 

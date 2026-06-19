@@ -74,8 +74,10 @@ class FakeTokenizer:
 def load_tokenizer(name: str):
     """加载 tokenizer: fake → FakeTokenizer; 否则尝试 transformers 离线加载。
 
-    离线策略: TRANSFORMERS_OFFLINE=1 → 只用本地 HF 缓存, 不联网。
-    缓存里已有 Qwen/Qwen2.5-3B-Instruct (base 与 instruct 共享 tokenizer, CPT 无差异)。
+    离线策略: TRANSFORMERS_OFFLINE=1 → 只用本地缓存, 不联网。
+    必须用目标 CPT 模型同源 tokenizer (Qwen3.5-0.8B-Base); 跨代 tokenizer (Qwen2.5→3.5)
+    词表/切分未必共享, 不能假设 base↔instruct 或跨代一致。默认读本地魔搭路径
+    models/Qwen3.5-0.8B-Base-ms (week11 已下, 见 [[modelscope-qwen-download]])。
     """
     if name == "fake":
         return FakeTokenizer()
@@ -370,8 +372,8 @@ def main():
     parser.add_argument("--corpus", default="phase1/data/processed/cpt/", help="本地语料目录 (source=local 时用)")
     parser.add_argument("--source", default="synthetic", choices=["synthetic", "local", "hf"],
                         help="数据源 (默认 synthetic 零下载)")
-    parser.add_argument("--tokenizer", default="Qwen/Qwen2.5-3B-Instruct",
-                        help="tokenizer (fake = 零依赖验证; 真实名 = 离线读缓存)")
+    parser.add_argument("--tokenizer", default="models/Qwen3.5-0.8B-Base-ms",
+                        help="tokenizer (fake = 零依赖验证; 真实名/本地路径 = 离线读; 默认 week11 的 Qwen3.5-0.8B-Base)")
     parser.add_argument("--ratios", default="100-0,70-30,50-50,30-70",
                         help="混合比例 domain-general, 逗号分隔")
     parser.add_argument("--seq-length", type=int, default=2048, help="每个 chunk 的 token 长度")

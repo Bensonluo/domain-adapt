@@ -26,6 +26,8 @@ phase1/data/
 phase0/results/*.bin
 phase0/results/*.pt
 phase0/results/*.safetensors
+# week12 评估: fused 模型可由 mlx_lm.fuse 重生 (1.4GB), 不进 git; 只 track scores/报告 json
+phase1/results/week12_eval/week11_cpt_fused/
 *.bin
 *.pt
 *.safetensors

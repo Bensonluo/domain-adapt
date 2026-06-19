@@ -1,0 +1,33 @@
+{
+  "task_group": [
+    "general_cn"
+  ],
+  "limit": 100,
+  "forgetting": {
+    "cmmlu_world_history": {
+      "before": 0.51,
+      "after": 0.28,
+      "forgetting_rate": 0.4509803921568627,
+      "direction": "forgotten"
+    },
+    "cmmlu_high_school_physics": {
+      "before": 0.54,
+      "after": 0.23,
+      "forgetting_rate": 0.5740740740740742,
+      "direction": "forgotten"
+    },
+    "cmmlu_economics": {
+      "before": 0.53,
+      "after": 0.29,
+      "forgetting_rate": 0.45283018867924535,
+      "direction": "forgotten"
+    },
+    "cmmlu_marxist_theory": {
+      "before": 0.61,
+      "after": 0.49,
+      "forgetting_rate": 0.19672131147540983,
+      "direction": "forgotten"
+    }
+  },
+  "avg_rate": 0.41865149159639803
+}

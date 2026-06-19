@@ -41,7 +41,7 @@ python phase1/week10/data_prep_cpt.py --corpus phase1/data/processed/cpt/ --toke
 
 ## 交付物
 
-- [x] 医疗语料数据集（demo 级已就绪，1B+ tokens 留训练前下载）— [`data/processed/cpt_ready/cpt_*.jsonl`](../data/processed/cpt_ready/)
+- [x] 真实 CPT 语料已接通（魔搭：医学百科 905 万 + 中文维基 509 万 token，4 配比就绪）— [`data/processed/cpt_ready/cpt_*.jsonl`](../data/processed/cpt_ready/)（demo synthetic 数据已被真实数据替换）
 - [x] 4 种混合比例配置文件（100-0 / 70-30 / 50-50 / 30-70）— 实际 token 比例精确命中目标
 - [x] Token 统计报告 — [`token_report.json`](../data/processed/cpt_ready/token_report.json)
 - [x] 数据清洗管线跑通 — [`prep/clean_pipeline.py`](../prep/clean_pipeline.py)（200 条带脏数据 → 13 条干净，验证 boilerplate/exact-dedup 逻辑）
@@ -61,11 +61,29 @@ python phase1/week10/data_prep_cpt.py --corpus phase1/data/processed/cpt/ --toke
 **当前（demo，零下载）**：`--source synthetic` + `--tokenizer fake` 跑通整条管线，验证清洗 / 混合 / 切块 / 报告逻辑。
 管线：`raw → clean_pipeline.py → data_prep_cpt.py → cpt_*.jsonl + token_report.json`。
 
-> **Tokenizer 与 week11 的关系**：week10 的 `--tokenizer` 只用于**统计 token 数** + 生成 `ids` 字段。
-> week11 的 MLX 训练**只用 `text` 字段**，用目标模型（Qwen3.5-0.8B）自己的 tokenizer 重新编码。
-> 所以 week10 用 `fake` / `Qwen2.5-3B` / `Qwen3.5-0.8B` 任意 tokenizer 都不影响 week11 训练正确性——`token_report.json` 的数字仅供规模参考。
+> **Tokenizer 与 week11 的关系**：week10 的 `--tokenizer` 生成 `ids` 字段 + 统计 token 数。
+> week11 的 MLX 训练**只用 `text` 字段**，用目标模型（Qwen3.5-0.8B-Base）自己的 tokenizer 在线重编码——
+> 所以 tokenizer 选错**不影响训练正确性**。但 ⚠️ `token_report.json` 的规模数字必须用**目标模型同源 tokenizer** 才准:
+> 实测同一句中文「本章介绍了临床药理学的概念与发展概况。」fake(字节级)= 57 token，Qwen3.5 BPE = 9 token（**压缩 6.3x**）。
+> 跨代 tokenizer（Qwen2.5→3.5）词表也不同——用错则统计的 token 数差几倍，步数/显存预算全错。
 
-**训练前（真实数据）**：
-1. 建 venv：`pip install -r requirements.txt`（国内用 aliyun 镜像）
-2. 放医疗语料到 `data/raw/medical/*.txt`，跑 `clean_pipeline.py --config medical --input data/raw/medical/`
-3. 跑 `data_prep_cpt.py --source local --corpus data/processed/cpt/ --tokenizer Qwen/Qwen2.5-3B-Instruct`（模型已在 HF 缓存，离线可用，无需下载）
+**真实数据（week12 已接通）**：用魔搭 ModelScope 真实中文语料替换合成数据，让 CPT 真正能学到领域知识
+（week11 已证：16 条 fake-tokenizer 合成数据只学「医疗腔调」form，学不到 fact）。
+
+| 源 | 内容 | 条数 | tokens |
+|----|------|------|--------|
+| 领域 `zjydiary/Medical` → `pretrain/medical_book_zh.json` | 中文医学百科纯文本 | 7,610 | 905 万 |
+| 通用 `AI-ModelScope/wikipedia-cn-20230720-filtered` | 中文维基纯文本 | 10,000 | 509 万 |
+
+```bash
+# 1. 下载真实语料（魔搭，国内友好；脚本见 download_corpus.py）
+python phase1/week10/download_corpus.py        # 领域+通用各取上限 → phase1/data/raw/{domain,general}/
+
+# 2. 用真实 Qwen3.5-0.8B-Base tokenizer 重跑 4 配比
+python phase1/week10/data_prep_cpt.py --source local --corpus phase1/data/raw \
+    --tokenizer models/Qwen3.5-0.8B-Base-ms
+```
+
+产出（vs week11 假数据 16 条 / 3.3 万 token）：4 配比 chunk 数 70-30=6315 / 100-0=4420 / 50-50=4971 / 30-70=3551，
+token 比精确命中目标（实测 70-30 实际 0.70 / 目标 0.70），**真实 token 量提升 ~200 倍**（905 万医疗 + 509 万维基）。
+重训验证（mlx venv）留 week13。
