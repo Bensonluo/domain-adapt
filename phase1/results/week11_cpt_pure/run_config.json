@@ -1,0 +1,16 @@
+{
+  "model": "/Users/luopeng/Documents/GitHub/domain-adapt/models/Qwen3.5-0.8B-Base-ms",
+  "fine_tune_type": "full",
+  "num_layers": -1,
+  "ratio": "70-30",
+  "iters": 200,
+  "batch_size": 1,
+  "grad_accum": 1,
+  "learning_rate": 1e-05,
+  "max_seq_length": 2048,
+  "grad_checkpoint": true,
+  "report_to": null,
+  "mlx_train_samples": 15,
+  "mlx_val_samples": 1,
+  "framework": "mlx-lm"
+}

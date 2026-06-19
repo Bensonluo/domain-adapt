@@ -50,7 +50,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA = ROOT / "phase1" / "data" / "processed" / "cpt_ready"   # week10 输出
 DEFAULT_MLX_DATA = ROOT / "phase1" / "data" / "processed" / "cpt_mlx"  # MLX 消费目录
 DEFAULT_OUTPUT = ROOT / "phase1" / "results" / "week11_cpt_pure"
-DEFAULT_MODEL = "Qwen/Qwen3.5-0.8B"   # base, 非量化 (全量 CPT 必须用原版)
+DEFAULT_MODEL = "Qwen/Qwen3.5-0.8B-Base"   # 纯 base (非 Instruct); 全量 CPT 必须非量化原版
 
 
 # ─────────────────────────────────────────────
@@ -67,12 +67,16 @@ def _write_text_jsonl(path: Path, texts: list[str]) -> None:
 
 
 def prepare_mlx_data(
-    ratio: str, src_dir: Path, mlx_dir: Path, val_ratio: float = 0.1
+    ratio: str, src_dir: Path, mlx_dir: Path, val_ratio: float = 0.1, min_val: int = 4
 ) -> tuple[int, int]:
     """把 week10 的 cpt_{ratio}.jsonl 转成 MLX 要求的 train.jsonl + valid.jsonl。
 
     MLX 要求数据目录下有 train.jsonl (必须) + valid.jsonl (可选, 用于训练中 val loss)。
     text 格式: CPT 不 mask prompt, 每个token都算 loss (区别于 SFT 的 completion-only)。
+
+    min_val: 验证集最少条数 (默认 4)。MLX evaluate 要凑齐一个 batch_size 才不报错
+    ("Dataset must have at least batch_size examples")。demo 数据小 (16 条),
+    10% 切出来可能 < batch_size, 所以保底至少 min_val 条, 但不超过总数一半。
     """
     src = src_dir / f"cpt_{ratio}.jsonl"
     if not src.exists():
@@ -84,8 +88,9 @@ def prepare_mlx_data(
     records = [json.loads(l) for l in src.read_text(encoding="utf-8").splitlines() if l.strip()]
     texts = [r["text"] for r in records]   # 只取 text, 丢 ids/n_tokens
 
-    # 切 10% 做验证集 (监控 val loss / perplexity, 呼应 README 验收点)
-    n_val = max(1, int(len(texts) * val_ratio))
+    # 切验证集: 至少 min_val 条 (凑齐 batch_size), 但不超过总数一半 (留给训练)
+    n_val = min(max(min_val, int(len(texts) * val_ratio)), len(texts) // 2)
+    n_val = max(1, n_val)   # 兜底: 极端小数据至少 1 条
     val_texts, train_texts = texts[:n_val], texts[n_val:]
 
     _write_text_jsonl(mlx_dir / "train.jsonl", train_texts)
@@ -357,7 +362,9 @@ def main():
 
     # 1. 数据准备: week10 → MLX train/valid.jsonl
     mlx_data_dir = DEFAULT_MLX_DATA / args.ratio.replace("-", "_")
-    n_train, n_val = prepare_mlx_data(args.ratio, Path(args.data), mlx_data_dir)
+    n_train, n_val = prepare_mlx_data(
+        args.ratio, Path(args.data), mlx_data_dir, min_val=args.batch_size
+    )
     print(f"[data] ratio={args.ratio} → train.jsonl ({n_train}) + valid.jsonl ({n_val}) @ {mlx_data_dir}")
 
     # 2. 检查 mlx-lm 是否装了

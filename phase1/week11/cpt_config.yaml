@@ -18,9 +18,9 @@
 #   python phase1/week11/train_cpt.py --no-generate --iters 1   # 触发数据转 MLX 格式
 # ============================================================================
 
-# 模型: 全量 CPT 必须非量化原版 (量化版只能走 QLoRA 路径)
-#   LoRA-CPT 省内存可选 mlx-community/Qwen3.5-0.8B-4bit
-model: Qwen/Qwen3.5-0.8B
+# 模型: 全量 CPT 必须非量化 + 纯 base (非 Instruct); 量化版只能走 QLoRA 路径
+#   LoRA-CPT 省内存可选 mlx-community/Qwen3.5-0.8B-Base-4bit
+model: Qwen/Qwen3.5-0.8B-Base
 
 # 训练开关 (true = 训练; 仅评估时设 false)
 train: true

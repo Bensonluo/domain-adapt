@@ -95,20 +95,52 @@ steps_per_eval: 50                # 每 50 步算 val loss + ppl
 
 ### 交付物
 
-- [ ] `results/week11_cpt_pure/loss_log.csv` — 每步 loss（iter, kind, loss）
-- [ ] `results/week11_cpt_pure/loss_curve.png` — loss 曲线图
-- [ ] `results/week11_cpt_pure/adapters/` — 训练权重
-- [ ] `results/week11_cpt_pure/generation_test.txt` — 生成测试（观察领域语言能力变化）
-- [ ] `results/week11_cpt_pure/run_config.json` — 可复现配置
+- [x] `results/week11_cpt_pure/loss_log.csv` — 每步 loss（iter, kind, loss）
+- [x] `results/week11_cpt_pure/loss_curve.png` — loss 曲线图
+- [x] `results/week11_cpt_pure/adapters/` — 训练权重（iter 100 / 200 / final）
+- [x] `results/week11_cpt_pure/generation_test.txt` — 生成测试（观察领域语言能力变化）
+- [x] `results/week11_cpt_pure/run_config.json` — 可复现配置
 
 ---
 
 ## 验收清单
 
-- [ ] CPT 训练完成，loss 稳定下降
-- [ ] 验证 perplexity 低于基线（val loss 在 `loss_log.csv` 里，ppl = exp(loss)）
-- [ ] Loss 曲线截图保存（`loss_curve.png`）
-- [ ] 生成测试能看出医疗领域语言变化
+- [x] CPT 训练完成，loss 稳定下降 — train `1.29→0.012` 单调降；val 在 iter 50 见底后反弹（过拟合，见下方结论）
+- [x] 验证 perplexity 低于基线 — 基线 `e^1.61≈5.0`，最低(iter 50)`e^0.37≈1.45`，终点(iter 200)`e^0.66≈1.93`，均低于基线
+- [x] Loss 曲线截图保存 — `loss_curve.png`
+- [x] 生成测试能看出医疗领域语言变化 — 学会医疗话语结构（腔调），但内容编造（见结论：form vs fact）
+
+---
+
+## 实验结论
+
+> 配置（详见 `run_config.json`）：Qwen3.5-0.8B-Base 全量 CPT（`full` / `num_layers -1`，解冻 66% ≈ 498M/752M），70-30 demo 数据（16 条），200 iters，**batch_size 1**、lr 1e-5、seq 2048、grad_checkpoint。
+
+### 1. loss 曲线：train / val 在 iter 50 分叉 = 过拟合
+
+| iter | train loss | val loss |
+|------|-----------|----------|
+| 1    | —         | 1.612    |
+| 10   | 1.288     | —        |
+| 50   | 0.280     | **0.369（最低）** |
+| 100  | 0.151     | 0.428    |
+| 150  | 0.061     | 0.570    |
+| 200  | **0.012** | 0.657    |
+
+train 一路降到几乎 0，但 val 在 iter 50 触底后**反弹爬升**。train/val 分叉是 CPT 监控的核心信号：**早停点在 iter 50**，再训就是死记训练集、泛化变差。
+
+### 2. 生成测试：学到"腔调"，没学到"知识"
+
+prompt「患者男性，54 岁，主诉胸痛」→ 模型吐出「42 岁持续高热…腹痛…心力衰竭…头孢曲松治心梗…CSCO 指南」。
+
+- **学到的**：医疗话语结构（查体 / 初步诊断 / 鉴别诊断 / 治疗 / 指南）——领域的 **form（分布、句式）**。
+- **没学到的**：年龄、诊断、用药全对不上 prompt——领域的 **fact（事实知识）**。
+
+### 3. 三个 insight
+
+1. **CPT 改 form，不改 fact**。模型学会"用医疗的腔调说话"，但教不会"说对的医疗话"——后者要靠**真实、足量、准确**的数据。16 条 fake-tokenizer demo 数据只能验证流程、传不了知识。
+2. **小数据全量 CPT 过拟合极快**。仅 ~3 个 epoch（iter 50）val 就见底。全量 CPT + 小数据 = 高方差，早停 / 正则 / 更大数据缺一不可。
+3. **CPT loss 曲线的读法**（呼应思考锚点）：CPT 对纯 text 的**每个 token** 算 loss，曲线反映"领域分布的拟合程度"；过拟合的标志不是 loss 高，而是 **train 继续降、val 反弹**的分叉——这是 CPT（续训全 token）区别于 SFT（只算 completion）的监控要点。
 
 ---
 

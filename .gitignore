@@ -16,6 +16,8 @@ env/
 *.ipynb_checkpoints
 
 # Models / Data / Checkpoints (大文件不进 git)
+# 下载的模型权重 (魔搭/HF), 全部可再生, 绝不进 git
+models/
 phase0/checkpoints/
 phase0/data/raw/
 phase0/data/processed/
