@@ -157,7 +157,7 @@ DeepSeek-V3-Base (预训练)
 
 ---
 
-## 8. 面试速答卡
+## 8. 要点速答
 
 **Q: GRPO 和 PPO 的核心区别？**
 A: GRPO 砍掉了 value/critic 网络，用"一组采样的 reward 做组内 z-score 归一化"代替 learned baseline 估 advantage。另外把 KL 从 reward 里挪到 loss 外层，并用无偏 KL 估计量。

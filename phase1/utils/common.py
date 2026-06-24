@@ -60,7 +60,7 @@ def save_training_config(output_dir: str, args, training_args=None, extra: Optio
         training_args: transformers.TrainingArguments 或 TRL config
         extra: 额外的配置信息
 
-    思考：面试官问"你怎么保证实验可复现？"时，这个函数就是答案的一部分。
+    思考：被问"你怎么保证实验可复现？"时，这个函数就是答案的一部分。
     """
     config = {
         "script_args": vars(args) if hasattr(args, "__dict__") else args,

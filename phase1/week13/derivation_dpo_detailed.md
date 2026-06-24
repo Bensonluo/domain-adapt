@@ -109,7 +109,7 @@ $$
 
 ---
 
-## 5. 三个关键洞察（面试常问）
+## 5. 三个关键洞察
 
 ### (a) 为什么 $Z(x)$ 能抵消？——Bradley-Terry 的功劳
 
@@ -160,7 +160,7 @@ $$
 
 ---
 
-## 8. 面试速答卡
+## 8. 要点速答
 
 **Q: DPO 为什么不需要 reward model？**
 A: 因为 RLHF 目标有闭式最优解 $\pi^*=\frac{1}{Z}\pi_{\text{ref}}\exp(r/\beta)$，反解出 $r=\beta\log(\pi^*/\pi_{\text{ref}})+\beta\log Z$——reward 被 reparameterize 成了策略的 logprob 比。语言模型本身就是 reward model。
