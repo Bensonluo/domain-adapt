@@ -1,0 +1,112 @@
+{
+  "dataset": {
+    "id": "modelzhang/medical_evidence_DPO",
+    "source_file": "dpo_answer.jsonl",
+    "license_note": "card frontmatter 标 MIT, loading script 标 cc-by-nc-sa-4.0 (个人学习可用, 商用前需澄清)",
+    "format": "{prompt, chosen, rejected}",
+    "domain": "中文医疗循证 (clinical guidelines / disease mechanism / pharmacology / diagnostics / research methods)"
+  },
+  "counts": {
+    "raw": 1399,
+    "after_filter": 1399,
+    "after_exact_dedup": 1399,
+    "dropped_by_filter": {},
+    "exact_duplicates_removed": 0,
+    "note": "同 prompt 不同答案的偏好对保留 (DPO 合法); 仅去完全相同的整条记录",
+    "target_was_2000": false
+  },
+  "alternatives_in_dataset": {
+    "deepseek_vs_qwen6B_DPO.jsonl": "2099 条, chat-message 格式, deepseek(teacher) vs qwen6B(student) 生成 — 即 stub 原设的 teacher/student 路线, 已预生成; 转换为 {prompt,chosen,rejected} 可用",
+    "filter_dpo_dataset.jsonl": "857 条, agent/function-calling 格式 (带 tools 字段), 与本周 DPO 对齐目标不符"
+  },
+  "char_qc": {
+    "char_lengths": {
+      "prompt": {
+        "n": 1399,
+        "mean": 66.52,
+        "median": 65,
+        "stdev": 21.12,
+        "min": 13,
+        "max": 151,
+        "p95": 104.0,
+        "p99": 131.0
+      },
+      "chosen": {
+        "n": 1399,
+        "mean": 3294.34,
+        "median": 3292,
+        "stdev": 1003.9,
+        "min": 281,
+        "max": 7205,
+        "p95": 4896.0,
+        "p99": 5652.46
+      },
+      "rejected": {
+        "n": 1399,
+        "mean": 1856.09,
+        "median": 1875,
+        "stdev": 435.41,
+        "min": 82,
+        "max": 3514,
+        "p95": 2543.8,
+        "p99": 2887.02
+      }
+    },
+    "chosen_minus_rejected": {
+      "n": 1399,
+      "mean": 1438.25,
+      "median": 1412,
+      "stdev": 932.45,
+      "min": -1529,
+      "max": 4764,
+      "p95": 2989.7,
+      "p99": 3743.82
+    },
+    "chosen_longer_pct": 93.5,
+    "length_bias_pct": 32.09,
+    "bias_threshold": 0.5
+  },
+  "token_qc": {
+    "available": true,
+    "tokenizer": "Qwen3.5-0.8B-Base-ms",
+    "prompt_tokens": {
+      "n": 1399,
+      "mean": 39.68,
+      "median": 38,
+      "stdev": 13.64,
+      "min": 6,
+      "max": 96,
+      "p95": 64.0,
+      "p99": 79.06
+    },
+    "prompt_plus_chosen_tokens": {
+      "n": 1399,
+      "mean": 1985.04,
+      "median": 1987,
+      "stdev": 600.89,
+      "min": 207,
+      "max": 3815,
+      "p95": 2980.4,
+      "p99": 3355.56
+    },
+    "prompt_plus_rejected_tokens": {
+      "n": 1399,
+      "mean": 1101.62,
+      "median": 1110,
+      "stdev": 258.17,
+      "min": 58,
+      "max": 2066,
+      "p95": 1517.1,
+      "p99": 1747.1
+    },
+    "max_seq_coverage": {
+      "1024": 6.08,
+      "2048": 53.9,
+      "4096": 100.0
+    }
+  },
+  "outputs": {
+    "train": "phase1/data/processed/preference/train.jsonl",
+    "sampled_100": "phase1/week14/sampled_100.jsonl"
+  }
+}
