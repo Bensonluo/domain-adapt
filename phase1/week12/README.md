@@ -9,11 +9,13 @@
 
 ## 本周做了什么（实际执行）
 
-**评估管线接通 + base vs week11-CPT-fused 一次对比**（不依赖 week13 真数据重训）。
+**评估管线接通 + base vs CPT-fused 对比，并用真数据补完闭环**。
 
-week11 已证：16 条 fake-tokenizer 合成数据 CPT 只学「医疗腔调」（form）不学「知识」（fact）。本周把**评估能力**搭起来，用现成的 base + week11-CPT 产物跑一次，结果比预期更极端：**假数据 CPT 不仅没带来领域提升，反而全面退化**（医疗 −20%、通用遗忘 +42%）——量化印证了 week11「假数据学不到 fact」，且进一步发现假数据过拟合会**破坏 base 已有能力**。
+week11 已证：15 条 fake-tokenizer 合成数据 CPT 只学「医疗腔调」（form）不学「知识」（fact）。本周先把**评估能力**搭起来，用现成的 base + week11 假数据 CPT 产物跑一次，结果比预期更极端：**假数据 CPT 不仅没带来领域提升，反而全面退化**（医疗 −20%、通用遗忘 +42%）。
 
-**多配比 ablation（纯领域/70-30/50-50 trade-off）留 week13**：那需要真数据重训出多个模型才有对照意义（在假数据模型上做 ablation 会误导）。
+随后用**真数据（5684 条真实医学/通用语料，70-30 配比）重训同一套 200 iter 全量 CPT**，与假数据并列对比，闭环检验「假数据是否退化根因」——结论见下方[「真数据闭环」](#真数据闭环week12-补完假数据-vs-真数据对照)。
+
+**多配比 ablation（纯领域/70-30/50-50 trade-off）留 week13**：那需要真数据重训出多个模型才有对照意义。
 
 ---
 
@@ -127,15 +129,70 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 ### 分析：假数据全量 CPT 是「全面退化」而非「弱提升」
 
-结果比预期更极端。week11 的 16 条 fake-tokenizer 合成数据 + 全量微调 200 iters（train loss 跌到 0.012，严重过拟合）：
+结果比预期更极端。week11 的 15 条 fake-tokenizer 合成数据 + 全量微调 200 iters（train loss 跌到 0.012，严重过拟合）：
 
 - **不是**「假数据学不到 fact、domain gain 接近 0」（原预期）
-- **而是**过拟合到 16 条假数据的分布，把 base 模型已有的能力也**破坏**了——医疗（−20%）和通用（遗忘 +42%）**同时崩**
+- **而是**过拟合到 15 条假数据的分布，把 base 模型已有的能力也**破坏**了——医疗（−20%）和通用（遗忘 +42%）**同时崩**
 
 关键教训（本周核心 insight）：
-1. **小数据 + 全量微调 = 灾难**：16 条数据全量微调 200 iter，过拟合不仅零收益，还负迁移。全量 CPT 对数据量/质量极度敏感。
-2. **退化是全面的，非选择性遗忘**：若只是「学医疗忘通用」，医疗应升/通用降；实际医疗通用**都降** → 是模型能力整体被带偏（train loss 0.012 = 死记 16 条，破坏表征），不是领域替换通用。
+1. **小数据 + 全量微调 = 灾难**：15 条数据全量微调 200 iter，过拟合不仅零收益，还负迁移。全量 CPT 对数据量/质量极度敏感。
+2. **退化是全面的，非选择性遗忘**：若只是「学医疗忘通用」，医疗应升/通用降；实际医疗通用**都降** → 是模型能力整体被带偏（train loss 0.012 = 死记 15 条，破坏表征），不是领域替换通用。
 3. **反证了 week12 先做真数据的必要性**：在假数据上做任何 CPT 调参/ablation 都会被这种「全面退化」误导——必须先有真数据。
+
+---
+
+## 真数据闭环（week12 补完：假数据 vs 真数据对照）
+
+> 用真数据（70-30，5684 train / 631 val 真实文本）重训**同一套** 200 iter 全量 CPT（lr 1e-5，batch 1，与 week11 假数据严格对齐），fuse 后评估，与假数据并列。检验「假数据是否退化根因、真数据能否学到 fact 且不退化」。
+
+### 训练行为对照（关键）
+
+| 数据 | 样本 | 200 iter train loss | val loss | 形态 |
+|------|------|---------------------|----------|------|
+| 假数据（week11） | 15 条合成 | **→ 0.012**（死记） | — | 严重过拟合 |
+| 真数据（week12） | 5684 条真实 | **持平 3.18**（iter10=3.30 → iter200=3.18） | 3.06 → 3.15（微升） | **几乎没学到（underfit）** |
+
+真数据 loss 平得像没训——这是 200 iter @ lr=1e-5 对 5684 条多样语料**步数/学习率不足**的直接表现，与假数据「死记 15 条跌到 0.012」形成两极对照。
+
+### 评估对照（base → 假数据 CPT → 真数据 CPT）
+
+**领域提升 medical_cn（8 医学子集；gain = CPT − base，正=提升）**
+
+| 子集 | base | 假数据 CPT | 真数据 CPT | 假数据 gain | 真数据 gain |
+|------|------|------------|------------|-------------|-------------|
+| anatomy | 0.390 | 0.290 | 0.370 | −0.100 | **−0.020** |
+| clinical_knowledge | 0.350 | 0.320 | 0.270 | −0.030 | −0.080 |
+| college_medicine | 0.500 | 0.260 | 0.410 | −0.240 | **−0.090** |
+| professional_medicine | 0.350 | 0.190 | 0.280 | −0.160 | **−0.070** |
+| genetics | 0.550 | 0.300 | 0.390 | −0.250 | **−0.160** |
+| traditional_chinese_medicine | 0.500 | 0.220 | 0.410 | −0.280 | **−0.090** |
+| virology | 0.640 | 0.280 | 0.530 | −0.360 | **−0.110** |
+| nutrition | 0.530 | 0.360 | 0.460 | −0.170 | **−0.070** |
+| **平均** | | | | **−0.199** | **−0.086** |
+
+**灾难性遗忘 general_cn（4 非医学子集；rate = (base−CPT)/base，正=遗忘）**
+
+| 子集 | base | 假数据 | 真数据 | 假数据遗忘 | 真数据遗忘 |
+|------|------|--------|--------|------------|------------|
+| world_history | 0.510 | 0.280 | 0.480 | +45.1% | **+5.9%** |
+| high_school_physics | 0.540 | 0.230 | 0.350 | +57.4% | +35.2% |
+| economics | 0.530 | 0.290 | 0.500 | +45.3% | **+5.7%** |
+| marxist_theory | 0.610 | 0.490 | 0.570 | +19.7% | **+6.6%** |
+| **平均** | | | | **+41.9%** | **+13.3%** |
+
+### 闭环结论：假数据确实更糟，但真数据也没转正
+
+1. **「假数据是退化根因」部分成立**：真数据在两条轴上都明显更轻——domain 退化 −0.086 vs −0.199（约 **2.3×** 轻）、遗忘 +13.3% vs +41.9%（约 **3.2×** 轻）。假数据的过拟合（loss 0.012）确实在**额外破坏** base 能力。方向性印证了原假设。
+
+2. **但真数据 domain gain 仍未转正**（8/8 还是 regressed，只是幅度小）。结合训练 loss 持平 3.18 → 真数据这轮**根本没学到医疗 fact**，所以谈不上「领域提升」。退化 −0.086 更像是「全量微调扰动权重导致的轻微漂移」，而非「学了新的忘了旧的」。
+
+3. **更值钱的发现 —— 200 iter 全量 CPT 是「两头不讨好」的甜点区外**：步数/lr 不足以学会新 domain（underfit，无 domain gain），但全量权重扰动仍足以侵蚀已有能力（仍 −9% 医疗 / −13% 通用）。要让 CPT 出现正 domain gain，下一步必须二选一：
+   - **加 iter / 加 lr**（但遗忘风险同步升 → 需更精细的 domain/general 数据配比）
+   - **换 PEFT（LoRA）** 把 domain 学习隔离在 adapter 里，少动 base 权重
+
+   这正是 week13 的方向（LoRA + 更多 iter + 配比 ablation），且有了一个干净的 base 真实对照基线。
+
+4. **physics 是两侧共同噪声点**（假 +57%、真 +35%，都远高于其他 3 科的个位数）——0.8B 在高中物理本身接近随机，单科幅度别过度解读，看 4 科均值。
 
 ---
 
@@ -143,8 +200,9 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 - [x] 评估管线接通（`mlx_lm.evaluate` / lm-eval + MLXLM）— [`_eval_core.py`](_eval_core.py)
 - [x] cmmlu 本地化（绕开 hub 1.x 国内连不上）— `phase1/data/cmmlu_local/`（curl hf-mirror + monkeypatch）
-- [x] base + week11-CPT 对比脚本 — [`eval_cpt.py`](eval_cpt.py) / [`eval_forgetting.py`](eval_forgetting.py)
-- [x] 量化结果（domain gain + forgetting）— [`results/week12_eval/domain_gain.json`](../results/week12_eval/domain_gain.json) / [`forgetting.json`](../results/week12_eval/forgetting.json)
+- [x] base + CPT 对比脚本 — [`eval_cpt.py`](eval_cpt.py) / [`eval_forgetting.py`](eval_forgetting.py)
+- [x] 假数据量化结果 — [`results/week12_eval/domain_gain.json`](../results/week12_eval/domain_gain.json) / [`forgetting.json`](../results/week12_eval/forgetting.json)
+- [x] **真数据闭环**（70-30 真实语料 200 iter 全量 CPT，与假数据严格对齐）— 训练产物 [`results/week12_real_cpt/`](../results/week12_real_cpt/)（adapters/loss_log/loss_curve/run_config）+ 量化 [`domain_gain_real.json`](../results/week12_eval/domain_gain_real.json) / [`forgetting_real.json`](../results/week12_eval/forgetting_real.json) + 只评估 fused 的薄脚本 [`run_real_eval.py`](run_real_eval.py)
 
 ---
 
@@ -153,7 +211,7 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 - [x] 评估后端选定并跑通（mlx_lm.evaluate，非 lm_eval --model hf）
 - [x] 任务选型匹配 CPT 语种（中文 CMMLU，非英文 MMLU）
 - [x] base + CPT 模型都能评估（CPT 经 fuse 合并）
-- [x] domain gain + forgetting 量化完成（medical_cn 平均 gain **−0.20**；general_cn 平均遗忘 **+42%** → 假数据 CPT 全面退化）
+- [x] domain gain + forgetting 量化完成（假数据：medical_cn **−0.199** / general_cn **+42%** 全面退化；真数据闭环：**−0.086 / +13.3%**，退化更轻但仍未转正 → 200 iter 全量 CPT underfit 且漂移，week13 转向 LoRA + 加 iter）
 - [x] 至少 1 个关于 CPT 评估的个人 insight（见下）
 
 ---
@@ -168,6 +226,7 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 ## 不在本周范围（留 week13）
 
-- **真数据重训**（70-30 一配比，对比 week11 假数据的 loss/generation）
+- ~~**真数据重训**（70-30 一配比，对比 week11 假数据）~~ — ✅ 本周已补完（见上「真数据闭环」）
 - **多配比 ablation**（纯领域/70-30/50-50 trade-off 曲线）——需真数据重训出多个模型
+- **LoRA 对照 + 更多 iter**——本周发现 200 iter 全量 CPT underfit 且仍漂移，week13 用 LoRA 隔离 + 加 iter 看能否让 domain gain 转正
 - **MMLU 跨语言检查**（英文医学，看中文 CPT 是否迁移到英文）——需解决 hub 或换数据源
