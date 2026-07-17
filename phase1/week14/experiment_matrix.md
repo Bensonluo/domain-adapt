@@ -1,6 +1,12 @@
 # Week14 实验矩阵 + 基线决策
 
-> DPO/GRPO 实战的实验设计。本周**只设计不跑**（week15+ 执行）。矩阵按真实约束（0.8B / Apple Silicon / 已有资产 / 偏好数据 QC 发现）校准，不照搬 plan 文本里 3B 的假设。
+> DPO/GRPO 实战的实验设计。本周**只设计不跑**（week15+ 执行）。矩阵按真实约束（Apple Silicon / 已有资产 / 偏好数据 QC 发现）校准，不照搬 plan 文本里 3B 的假设。
+
+> ⚠️ **更新（2026-07-17，week12 LoRA sweep 落地后）**：基座与基线已整体刷新——
+> - 基座 `Qwen3.5-0.8B-Base-ms`（exotic 多模态 VLM，慢且不稳）→ **`Qwen/Qwen3-1.7B`**（标准 qwen3 arch，2.6s/iter、稳）
+> - DPO 基线 `week12_eval/real_cpt_fused`（全量 FT，**domain gain −0.086 负**）→ **`week12_lora_cpt/50_50_fused`**（LoRA-CPT，**domain gain +0.043 正**、通用无遗忘）
+>
+> 即 CPT-only 基线不再是「勉强 CPT 的负 gain 模型」，而是**正经 domain-adapted 的正 gain 模型**——DPO 起点更扎实。偏好数据（1399 对）与长度偏差（93.5%）是纯文本、模型无关，仍有效（绝对 token 数因换 tokenizer 略变，方向不变）。
 
 ---
 
@@ -8,11 +14,11 @@
 
 | 维度 | 现实 | 对实验的影响 |
 |------|------|--------------|
-| 基座 | `Qwen3.5-0.8B-Base-ms`（**不是** plan 里的 3B） | batch 小、reward 信号弱；β 敏感度高于大模型 |
+| 基座 | `Qwen/Qwen3-1.7B`（标准 qwen3，LoRA-CPT 实测 2.6s/iter；**不是** plan 里的 3B） | batch 小、reward 信号弱；β 敏感度高于大模型 |
 | 偏好数据 | 1399 对（medical_evidence_DPO），**chosen 更长 93.5%**，32% 对长度差 >50% | **长度黑客风险高**：模型可能学"更长=更好"而非"更好=更好"。必须配长度控制的评估，考虑 length-normalized DPO 或 IPO |
-| 序列长度 | prompt+chosen token p95=2980 / p99=3356 / max=3815 | DPO `max_length≈4096`（仅 54% 对 fit 2048）→ 0.8B 全量 + 4096 ctx 在统一内存上偏紧，需 grad-checkpoint |
-| 参考模型 | DPO/GRPO 都要 frozen reference policy | 显存 ≈ 2× 模型参数（policy + ref）+ 激活；0.8B 可行但 GRPO 再加 G 次 generation 会更重 |
-| 已有基线 | `week12_eval/real_cpt_fused`（CPT-only，已 fuse-ready） | CPT-only 基线立即可用；**CPT+SFT 基线不存在**（见下决策） |
+| 序列长度 | prompt+chosen token p95=2980 / p99=3356 / max=3815 | DPO `max_length≈4096`（仅 54% 对 fit 2048）→ 1.7B + 4096 ctx 在统一内存上偏紧，需 grad-checkpoint |
+| 参考模型 | DPO/GRPO 都要 frozen reference policy | 显存 ≈ 2× 模型参数（policy + ref）+ 激活；1.7B 可行但 GRPO 再加 G 次 generation 会更重 |
+| 已有基线 | `week12_lora_cpt/50_50_fused`（LoRA-CPT，**正 gain +0.043**、通用无遗忘，已 fuse-ready） | CPT-only 基线立即可用且领域已增强；**CPT+SFT 基线不存在**（见下决策） |
 | 评估管线 | `week12/_eval_core.py`（CMMLU medical_cn/general_cn）+ 偏好胜率 | 评估零新增基础设施 |
 
 ---
@@ -22,7 +28,7 @@
 week14 README 矩阵 + week15 `train_dpo.py` 都假设 "CPT+SFT" 基线，但 **Phase 1 从未跑过 SFT**（仅 phase0 有 SFT skill）。两条出路：
 
 ### 方案 A（推荐，默认）：首轮用 CPT-only 基线
-- 基线 = `week12_eval/real_cpt_fused`（已 fuse-ready，本周即可起跑）
+- 基线 = `week12_lora_cpt/50_50_fused`（已 fuse-ready，**领域已正 gain +0.043**，本周即可起跑）
 - DPO 直接打在 CPT 模型上。非标准（DPO 惯例打在 instruct/SFT 模型上），但：
   - **学习价值**：能看到"纯 CPT 模型 + 偏好对齐"的效应，与 week11/12 的 CPT-only 评估形成连续对照
   - **不阻塞**：无需先补 SFT 子管线
@@ -45,7 +51,7 @@ week14 README 矩阵 + week15 `train_dpo.py` 都假设 "CPT+SFT" 基线，但 **
 | **1** | 同上 | **DPO** | β=0.1（弱，贴近 ref） | 轻微偏好提升，遗忘最小 | 同上 + 偏好胜率 + 长度控制胜率 |
 | **2** | 同上 | **DPO** | β=0.3（中） | 对齐/遗忘的甜点区候选 | 同上 |
 | **3** | 同上 | **DPO** | β=0.5（强，偏离 ref） | 偏好提升最大但医疗可能崩 | 同上 |
-| **4** | 同上 | **GRPO** | rule reward = 医学关键词 + 长度惩罚 + 结构分 | 验证 GRPO 在 0.8B 可跑；对比 DPO | 同上 |
+| **4** | 同上 | **GRPO** | rule reward = 医学关键词 + 长度惩罚 + 结构分 | 验证 GRPO 在 1.7B 可跑；对比 DPO | 同上 |
 | **5** | 同上 | **GRPO** | reward ablation（去掉长度惩罚 或 换纯格式 reward） | 量化 reward 各项贡献；**直接验证长度黑客**（去掉长度惩罚后是否模型输出变长） | 同上 + 平均输出长度对比 |
 
 **β 扫描（行 1-3）** 回答"DPO 对齐强度 vs 通用遗忘的 trade-off 最优点"——week12 思考锚点的对齐版。
@@ -69,7 +75,7 @@ week14 README 矩阵 + week15 `train_dpo.py` 都假设 "CPT+SFT" 基线，但 **
 
 ## 框架决策
 
-- **主路线：TRL**（`DPOTrainer` / `GRPOTrainer`）——课程既定方向（week15 `train_dpo.py` + deep-dive-plan 代码块都用 TRL），week14 源码阅读（见 `trl_source_notes.md`）也对应。week15 需在 venv 装 `trl + torch + transformers`（PyTorch MPS 后端，0.8B 可行但偏慢）。
+- **主路线：TRL**（`DPOTrainer` / `GRPOTrainer`）——课程既定方向（week15 `train_dpo.py` + deep-dive-plan 代码块都用 TRL），week14 源码阅读（见 `trl_source_notes.md`）也对应。week15 需在 venv 装 `trl + torch + transformers`（PyTorch MPS 后端，1.7B 可行但偏慢）。
 - **备选（Apple Silicon 友好）：MLX-DPO**。`mlx_lm` 无 DPO 子命令（已确认），但社区有 `mlx-tune`（SFT/DPO/ORPO on MLX）+ MLX-GRPO 实现。若 week15 TRL+MPS 太慢/不稳，切 MLX 路线。**本周不定，留 footnote**。
 
 ---
@@ -80,15 +86,15 @@ week14 README 矩阵 + week15 `train_dpo.py` 都假设 "CPT+SFT" 基线，但 **
 |------|------|------|
 | 长度黑客 | 数据 chosen 更长 93.5% | 行 5 + 长度控制胜率 + 可选 IPO/length-normalized 行 |
 | DPO 发散（方案 A） | base 模型未对齐指令格式 | β 从 0.1 起、lr 保守、监控 loss；发散则升级方案 B（先 SFT） |
-| 显存 | ref model = 2× params + 4096 ctx + GRPO G×generation | grad-checkpoint；GRPO 减 `num_generations`（G=4~8）；0.8B 在统一内存上可行 |
+| 显存 | ref model = 2× params + 4096 ctx + GRPO G×generation | grad-checkpoint；GRPO 减 `num_generations`（G=4~8）；1.7B 在统一内存上可行 |
 | GRPO generation 成本 | on-policy 每 prompt 生成 G 个 | 控 `num_generations` + 短 `max_new_tokens`；预期比 DPO 慢 3-5× |
 
 ---
 
 ## 复用资产清单（week15 执行时直接拿）
 
-- 基线模型：`phase1/results/week12_eval/real_cpt_fused/`（方案 A）
+- 基线模型：`phase1/results/week12_lora_cpt/50_50_fused/`（方案 A，领域正 gain +0.043）
 - 偏好数据：`phase1/data/processed/preference/train.jsonl`（1399 对，本周产物；切 ~100 hold-out 给胜率评估）
 - 评估管线：`phase1/week12/_eval_core.py`（`run_mlx_evaluate` / `fuse_model` / `TASK_GROUPS`）
 - 评估数据：`phase1/data/cmmlu_local/`
-- base tokenizer：`models/Qwen3.5-0.8B-Base-ms`（QC 已验证可用，vocab 248k）
+- base tokenizer：`Qwen/Qwen3-1.7B`（vocab 151k；偏好数据 QC 的绝对 token 数是旧 Qwen3.5 tokenizer 算的，换词表会略变，但长度偏差方向 93.5% 不变）

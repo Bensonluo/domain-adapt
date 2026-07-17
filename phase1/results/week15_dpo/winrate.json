@@ -1,0 +1,90 @@
+{
+  "base_50_50": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.27,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.348
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "dpo_b0.1": {
+    "n": 100,
+    "sum_logp_winrate": 0.02,
+    "mean_logp_winrate": 0.31,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.154,
+        "mean_wr": 0.231
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.391
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "dpo_b0.3": {
+    "n": 100,
+    "sum_logp_winrate": 0.02,
+    "mean_logp_winrate": 0.29,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.154,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.377
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "dpo_b0.5": {
+    "n": 100,
+    "sum_logp_winrate": 0.02,
+    "mean_logp_winrate": 0.29,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.154,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.377
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  }
+}

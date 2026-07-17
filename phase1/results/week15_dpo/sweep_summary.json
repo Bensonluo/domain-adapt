@@ -1,0 +1,60 @@
+{
+  "rows": [
+    {
+      "beta": "0.1",
+      "margin": 13.855,
+      "acc": 1.0,
+      "med_delta": -0.005,
+      "gen_delta": 0.005,
+      "sum_wr": 0.02,
+      "mean_wr": 0.31,
+      "matched_sum_wr": 0.154,
+      "matched_mean_wr": 0.231
+    },
+    {
+      "beta": "0.3",
+      "margin": 20.1918,
+      "acc": 1.0,
+      "med_delta": -0.0063,
+      "gen_delta": 0.005,
+      "sum_wr": 0.02,
+      "mean_wr": 0.29,
+      "matched_sum_wr": 0.154,
+      "matched_mean_wr": 0.154
+    },
+    {
+      "beta": "0.5",
+      "margin": 23.1019,
+      "acc": 1.0,
+      "med_delta": -0.0026,
+      "gen_delta": 0.005,
+      "sum_wr": 0.02,
+      "mean_wr": 0.29,
+      "matched_sum_wr": 0.154,
+      "matched_mean_wr": 0.154
+    }
+  ],
+  "best_beta": "0.1",
+  "base_winrate": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.27,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.348
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  }
+}
