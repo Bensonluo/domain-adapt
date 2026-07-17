@@ -1,0 +1,27 @@
+{
+  "ratios": {
+    "100-0": {
+      "avg_gain": 0.03250000000000001,
+      "avg_forgetting_rate": -0.08212548959799895,
+      "fused_path": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/results/week12_lora_cpt/100_0_fused"
+    },
+    "70-30": {
+      "avg_gain": 0.041249999999999995,
+      "avg_forgetting_rate": -0.10418499496574883,
+      "fused_path": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/results/week12_lora_cpt/70_30_fused"
+    },
+    "50-50": {
+      "avg_gain": 0.0425,
+      "avg_forgetting_rate": -0.1188113306662864,
+      "fused_path": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/results/week12_lora_cpt/50_50_fused"
+    }
+  },
+  "reference_full_ft_70_30": {
+    "avg_gain": -0.08625,
+    "avg_forgetting_rate": 0.13321323133508142
+  },
+  "best_ratio": "50-50",
+  "best_avg_gain": 0.0425,
+  "best_avg_forgetting_rate": -0.1188113306662864,
+  "week15_dpo_baseline": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/results/week12_lora_cpt/50_50_fused"
+}

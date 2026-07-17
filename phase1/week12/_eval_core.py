@@ -250,6 +250,16 @@ def fuse_model(base_model: str, adapter_path: Path, save_path: Path) -> Path:
     print("Fuse 命令:")
     print(" ".join(cmd))
     print("=" * 60)
-    subprocess.run(cmd, check=True)
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError:
+        # mlx_lm fuse 末尾跑 create_model_card → ModelCard.load(), 离线时拉 README.md 会
+        # 抛 OfflineModeIsEnabled/LocalEntryNotFoundError。但权重合并在那之前已完成 —— 只要
+        # model.safetensors 落盘了, 这就是 cosmetic 失败, 当成功 (别让 README 卡住整个 eval)。
+        # 真失败 (没落盘) 才 re-raise。
+        if (save_path / "model.safetensors").exists():
+            print(f"[fuse] ⚠ 子进程非零退出但 model.safetensors 已落盘 (card 步骤 cosmetic 失败), 当成功: {save_path}")
+        else:
+            raise
     print(f"[fuse] ✓ {save_path}")
     return save_path

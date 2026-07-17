@@ -131,6 +131,8 @@ def build_train_command(args, mlx_data_dir: Path, adapter_path: Path) -> list[st
         cmd += ["--grad-accumulation-steps", str(args.grad_accum)]
     if args.report_to:
         cmd += ["--report-to", args.report_to]
+    if args.config:
+        cmd += ["--config", args.config]   # LoRA: lora_parameters (rank/scale/dropout) 只能走 config
     return cmd
 
 
@@ -355,6 +357,8 @@ def main():
     parser.add_argument("--live-plot", action="store_true", help="matplotlib 实时窗口 (本地零登录)")
     parser.add_argument("--report-to", default=None, help="实验追踪 (swanlab 国内友好 / wandb)")
     parser.add_argument("--no-generate", action="store_true", help="跳过训练后生成测试")
+    parser.add_argument("--config", default=None,
+                        help="mlx_lm YAML 配置路径 (LoRA 的 lora_parameters 只能走 config; CLI flag 优先级更高)")
     args = parser.parse_args()
 
     output_dir = Path(args.output)

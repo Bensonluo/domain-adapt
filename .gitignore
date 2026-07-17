@@ -75,3 +75,10 @@ phase1-deep-dive-plan.md
 phase2-integration-plan.md
 phase3-career-transition-plan.md
 /phase0/.omc
+/.playwright-mcp
+
+# scratch / smoke / probe (训练验证产物, 不进 git; 真实结果目录仍追踪 JSON/config/loss_log)
+phase1/results/week15_dpo_smoke*
+phase1/results/**/_smoke*/
+phase1/results/**/_smoke_qwen3/
+phase1/results/**/_probe*/

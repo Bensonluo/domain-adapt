@@ -1,0 +1,16 @@
+{
+  "model": "Qwen/Qwen3-1.7B",
+  "fine_tune_type": "lora",
+  "num_layers": -1,
+  "ratio": "70-30",
+  "iters": 2500,
+  "batch_size": 1,
+  "grad_accum": 1,
+  "learning_rate": 1e-05,
+  "max_seq_length": 2048,
+  "grad_checkpoint": true,
+  "report_to": null,
+  "mlx_train_samples": 6328,
+  "mlx_val_samples": 703,
+  "framework": "mlx-lm"
+}

@@ -1,0 +1,57 @@
+{
+  "task_group": [
+    "medical_cn"
+  ],
+  "limit": 100,
+  "gains": {
+    "cmmlu_anatomy": {
+      "baseline": 0.44,
+      "after_cpt": 0.46,
+      "absolute_gain": 0.020000000000000018,
+      "direction": "improved"
+    },
+    "cmmlu_clinical_knowledge": {
+      "baseline": 0.47,
+      "after_cpt": 0.52,
+      "absolute_gain": 0.050000000000000044,
+      "direction": "improved"
+    },
+    "cmmlu_college_medicine": {
+      "baseline": 0.62,
+      "after_cpt": 0.62,
+      "absolute_gain": 0.0,
+      "direction": "regressed"
+    },
+    "cmmlu_professional_medicine": {
+      "baseline": 0.54,
+      "after_cpt": 0.54,
+      "absolute_gain": 0.0,
+      "direction": "regressed"
+    },
+    "cmmlu_genetics": {
+      "baseline": 0.45,
+      "after_cpt": 0.5,
+      "absolute_gain": 0.04999999999999999,
+      "direction": "improved"
+    },
+    "cmmlu_traditional_chinese_medicine": {
+      "baseline": 0.57,
+      "after_cpt": 0.6,
+      "absolute_gain": 0.030000000000000027,
+      "direction": "improved"
+    },
+    "cmmlu_virology": {
+      "baseline": 0.58,
+      "after_cpt": 0.63,
+      "absolute_gain": 0.050000000000000044,
+      "direction": "improved"
+    },
+    "cmmlu_nutrition": {
+      "baseline": 0.51,
+      "after_cpt": 0.57,
+      "absolute_gain": 0.05999999999999994,
+      "direction": "improved"
+    }
+  },
+  "avg_gain": 0.03250000000000001
+}

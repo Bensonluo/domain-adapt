@@ -1,0 +1,41 @@
+{
+    "adapter_path": "phase1/results/week12_lora_cpt/50_50/adapters",
+    "batch_size": 1,
+    "clear_cache_threshold": 0,
+    "config": "phase1/week11/lora_cpt_config.yaml",
+    "data": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/data/processed/cpt_mlx/50_50",
+    "fine_tune_type": "lora",
+    "grad_accumulation_steps": 1,
+    "grad_checkpoint": true,
+    "iters": 2500,
+    "learning_rate": 1e-05,
+    "lora_parameters": {
+        "rank": 16,
+        "scale": 32.0,
+        "dropout": 0.05
+    },
+    "lr_schedule": null,
+    "mask_prompt": false,
+    "max_seq_length": 2048,
+    "model": "Qwen/Qwen3-1.7B",
+    "num_layers": -1,
+    "optimizer": "adam",
+    "optimizer_config": {
+        "adam": {},
+        "adamw": {},
+        "muon": {},
+        "sgd": {},
+        "adafactor": {}
+    },
+    "project_name": null,
+    "report_to": null,
+    "resume_adapter_file": null,
+    "save_every": 100,
+    "seed": 42,
+    "steps_per_eval": 50,
+    "steps_per_report": 10,
+    "test": false,
+    "test_batches": 500,
+    "train": true,
+    "val_batches": 25
+}

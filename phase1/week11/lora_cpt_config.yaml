@@ -1,0 +1,26 @@
+# ============================================================================
+# MLX-LM LoRA-CPT 配置 (Apple Silicon / M3 Max)
+# ============================================================================
+# 只放 LoRA 专属字段。model / data / iters / lr / output 等由 train_cpt.py 的 CLI
+# 传入 (mlx_lm 合并优先级: CLI flag > 本 config > CONFIG_DEFAULTS, 见 lora.py:360-368),
+# 所以这里只补 wrapper 不传的 lora_parameters。
+#
+# lora_parameters schema 来自 mlx_lm 0.31.3 lora.py:74 CONFIG_DEFAULTS (源码确认):
+#   {"rank": 8, "scale": 20.0, "dropout": 0.0}   ← 默认值 (rank 偏小, CPT 知识注入不够)
+#
+# 用法 (经 train_cpt.py, 推荐):
+#   .venv/bin/python phase1/week11/train_cpt.py \
+#       --model models/Qwen3.5-0.8B-Base-ms --ratio 70-30 \
+#       --fine-tune-type lora --config phase1/week11/lora_cpt_config.yaml \
+#       --lr 1e-4 --iters 8000 --batch-size 1
+# ============================================================================
+
+# LoRA 超参 —— 跨三比例 (100-0/70-30/50-50) 固定不变, 让"比例"成为唯一变量 (公平对照)。
+#   rank 16: phase0/week5 SFT precedent (大模型 rank 16); CPT 是知识注入, 比 style 改动
+#            需要更多容量, 16 比 mlx_lm 默认 8 更稳。若 loss 不降再回退 rank 32。
+#   scale 32: alpha = 2*rank (常见启发式, effective scaling = scale/rank = 2)。
+#   dropout 0.05: 轻度正则, 防小数据过拟合。
+lora_parameters:
+  rank: 16
+  scale: 32.0
+  dropout: 0.05
