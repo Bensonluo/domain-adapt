@@ -1,0 +1,32 @@
+{
+  "run": "mcq_base",
+  "base": "phase1/results/week12_lora_cpt/50_50_fused",
+  "reward": "mcq_accuracy",
+  "loss_type": "dapo",
+  "lr": 1e-05,
+  "num_generations": 4,
+  "max_completion_length": 48,
+  "beta_kl": 0.0,
+  "max_steps": 1500,
+  "n_prompts": 8000,
+  "train_reward_quarters": [
+    0.454,
+    0.479,
+    0.557,
+    0.551
+  ],
+  "train_reward_delta": 0.097,
+  "holdout": {
+    "base_acc": 0.512,
+    "grpo_acc": 0.534,
+    "delta": 0.022,
+    "n": 500,
+    "unparseable": 0
+  },
+  "cmmlu": {
+    "base_medical": 0.5663,
+    "med_delta": 0.0024,
+    "base_general": 0.6675,
+    "gen_delta": 0.005
+  }
+}
