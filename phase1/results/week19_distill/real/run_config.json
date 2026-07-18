@@ -1,0 +1,22 @@
+{
+  "model": "phase1/results/week12_lora_cpt/50_50_fused",
+  "data": "phase1/results/week19_distill/data/real_sft.jsonl",
+  "lr": 2e-05,
+  "epochs": 3.0,
+  "max_steps": 0,
+  "limit": 0,
+  "dtype": "bfloat16",
+  "max_length": 1536,
+  "completion_only_loss": true,
+  "packing": false,
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.05
+  },
+  "batch_size": 4,
+  "grad_accum": 4,
+  "seed": 123,
+  "n_samples": 2000,
+  "device": "mps"
+}

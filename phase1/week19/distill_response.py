@@ -1,37 +1,48 @@
 """
-Phase 1 Week 19: Response Distillation
+Phase 1 Week 19: Response Distillation — 入口 redirect
 
-用大模型回答作为训练数据，训练小模型学习。
+本周 response 蒸馏已实现并跑完三对照 (real/distill/mixed)，功能拆到三个脚本，
+本文件只作入口指引 (不再保留旧的 deepseek-v3/qwen2.5-3b 占位 stub)。
 
-Usage:
-    python phase1/week19/distill_response.py \
-        --questions phase1/data/raw/questions.jsonl \
-        --teacher deepseek-v3 \
-        --student qwen2.5-3b-instruct \
-        --n 5000 \
-        --output phase1/data/processed/distill_response/
+真实实现：
+  - teacher 批量生成 (mlx_lm 直跑 Qwen3-30B-A3B)  → generate_teacher_answers.py
+  - 三源 SFT 数据准备 (real/distill/mixed)         → prepare_distill_data.py
+  - SFT 训练 (TRL SFTTrainer + PEFT)               → train_distill_sft.py
+  - 结果汇总 (三对照 + GRPO 对照)                   → summarize_distill.py
+  - 一键编排                                        → run_distill.sh
+
+结果：phase1/results/week19_distill/distill_summary.json
+详见：phase1/week19/README.md
+
+典型流程 (smoke-first)：
+    # 1. 备料 (real 不需 teacher；同时 emit teacher 题文件)
+    python phase1/week19/prepare_distill_data.py --n 2000 --seed 123 \\
+        --out phase1/results/week19_distill/data
+    # 2. teacher 生成 (mlx_lm direct, --resume 可中断续跑)
+    python phase1/week19/generate_teacher_answers.py \\
+        --teacher ~/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit \\
+        --questions phase1/results/week19_distill/data/teacher_questions.jsonl \\
+        --out phase1/results/week19_distill/data/teacher_answers.jsonl --resume
+    # 3. distill + mixed 数据 (读 teacher_answers)
+    python phase1/week19/prepare_distill_data.py --n 2000 --seed 123 \\
+        --teacher-answers phase1/results/week19_distill/data/teacher_answers.jsonl \\
+        --out phase1/results/week19_distill/data
+    # 4. 三臂 train + fuse + eval + 汇总
+    nohup bash phase1/week19/run_distill.sh > phase1/results/week19_distill/run.log 2>&1 &
 """
 
-import argparse
+import sys
+from pathlib import Path
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--questions", required=True, help="Questions JSONL file")
-    parser.add_argument("--teacher", default="deepseek-v3")
-    parser.add_argument("--student", default="qwen2.5-3b-instruct")
-    parser.add_argument("--n", type=int, default=5000)
-    parser.add_argument("--output", required=True)
-    args = parser.parse_args()
-
-    # TODO: 读取问题列表
-    # TODO: 用 teacher 生成回答 (temperature=0.3)
-    # TODO: 用 student 生成回答 (temperature=0.7)
-    # TODO: 对比 teacher vs student (LLM-as-judge)
-    # TODO: 保存蒸馏数据 (teacher 回答作为 SFT 训练数据)
-    # TODO: 输出统计报告
-
-    print("TODO: Implement response distillation")
+    print(__doc__)
+    print(f"\n[redirect] 真实实现见同目录：")
+    for f in ["generate_teacher_answers.py", "prepare_distill_data.py",
+              "train_distill_sft.py", "summarize_distill.py", "run_distill.sh"]:
+        p = Path(__file__).parent / f
+        print(f"  {'✓' if p.exists() else '✗'} {f}")
+    sys.exit(0)
 
 
 if __name__ == "__main__":

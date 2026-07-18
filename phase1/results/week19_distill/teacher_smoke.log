@@ -1,0 +1,14 @@
+[teacher] 加载 /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit (2.2s)
+[teacher] sampler: temp=0.0 (0=greedy)
+[teacher] 总题 2000 | 已答 0 (resume) | 本次 todo 50
+[teacher] 10/50 | tok/s=14.2 | compliant=1.00 | teacher_acc=1.000 | wall=26s
+[teacher] 20/50 | tok/s=14.3 | compliant=1.00 | teacher_acc=1.000 | wall=48s
+[teacher] 30/50 | tok/s=14.3 | compliant=1.00 | teacher_acc=0.967 | wall=72s
+[teacher] 40/50 | tok/s=14.1 | compliant=1.00 | teacher_acc=0.925 | wall=100s
+[teacher] 50/50 | tok/s=13.9 | compliant=1.00 | teacher_acc=0.900 | wall=126s
+
+[teacher] ✓ 本次生成 50 条 → phase1/results/week19_distill/data/teacher_answers_smoke.jsonl
+[teacher] tok/s=13.9 | compliant=1.000 | ★ teacher_acc(对gold)=0.900 (= distill 臂天花板) | wall=126s
+[teacher]   外推 N=500 ≈ 0.3h (单题均值 2.5s)
+[teacher]   外推 N=1000 ≈ 0.7h (单题均值 2.5s)
+[teacher]   外推 N=2000 ≈ 1.4h (单题均值 2.5s)

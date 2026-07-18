@@ -1,0 +1,8 @@
+{
+  "base_general_cn": 0.6675,
+  "runs": {
+    "real": -0.005,
+    "distill": 0.0075,
+    "mixed": 0.005
+  }
+}

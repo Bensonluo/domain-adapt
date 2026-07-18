@@ -1,0 +1,8 @@
+{
+  "base_medical_cn": 0.5663,
+  "runs": {
+    "real": -0.025,
+    "distill": -0.0013,
+    "mixed": -0.0026
+  }
+}

@@ -1,0 +1,29 @@
+[teacher] 加载 /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit (2.3s)
+[teacher] sampler: temp=0.0 (0=greedy)
+[teacher] 总题 2000 | 已答 50 (resume) | 本次 todo 1950
+[teacher] 100/1950 | tok/s=13.8 | compliant=1.00 | teacher_acc=0.890 | wall=282s
+[teacher] 200/1950 | tok/s=14.2 | compliant=1.00 | teacher_acc=0.855 | wall=546s
+[teacher] 300/1950 | tok/s=14.5 | compliant=1.00 | teacher_acc=0.847 | wall=783s
+[teacher] 400/1950 | tok/s=14.4 | compliant=1.00 | teacher_acc=0.858 | wall=1041s
+[teacher] 500/1950 | tok/s=14.7 | compliant=1.00 | teacher_acc=0.866 | wall=1290s
+[teacher] 600/1950 | tok/s=14.8 | compliant=1.00 | teacher_acc=0.868 | wall=1533s
+[teacher] 700/1950 | tok/s=14.8 | compliant=1.00 | teacher_acc=0.874 | wall=1781s
+[teacher] 800/1950 | tok/s=14.9 | compliant=1.00 | teacher_acc=0.876 | wall=2018s
+[teacher] 900/1950 | tok/s=15.0 | compliant=1.00 | teacher_acc=0.871 | wall=2273s
+[teacher] 1000/1950 | tok/s=15.0 | compliant=1.00 | teacher_acc=0.869 | wall=2533s
+[teacher] 1100/1950 | tok/s=15.1 | compliant=1.00 | teacher_acc=0.865 | wall=2767s
+[teacher] 1200/1950 | tok/s=15.2 | compliant=1.00 | teacher_acc=0.866 | wall=2985s
+[teacher] 1300/1950 | tok/s=15.2 | compliant=1.00 | teacher_acc=0.868 | wall=3239s
+[teacher] 1400/1950 | tok/s=15.3 | compliant=1.00 | teacher_acc=0.866 | wall=3483s
+[teacher] 1500/1950 | tok/s=15.3 | compliant=1.00 | teacher_acc=0.869 | wall=3739s
+[teacher] 1600/1950 | tok/s=15.4 | compliant=1.00 | teacher_acc=0.869 | wall=3983s
+[teacher] 1700/1950 | tok/s=15.4 | compliant=1.00 | teacher_acc=0.869 | wall=4217s
+[teacher] 1800/1950 | tok/s=15.5 | compliant=1.00 | teacher_acc=0.866 | wall=4442s
+[teacher] 1900/1950 | tok/s=15.6 | compliant=1.00 | teacher_acc=0.864 | wall=4673s
+[teacher] 1950/1950 | tok/s=15.5 | compliant=1.00 | teacher_acc=0.864 | wall=4800s
+
+[teacher] ✓ 本次生成 1950 条 → phase1/results/week19_distill/data/teacher_answers.jsonl
+[teacher] tok/s=15.5 | compliant=1.000 | ★ teacher_acc(对gold)=0.864 (= distill 臂天花板) | wall=4800s
+[teacher]   外推 N=500 ≈ 0.3h (单题均值 2.5s)
+[teacher]   外推 N=1000 ≈ 0.7h (单题均值 2.5s)
+[teacher]   外推 N=2000 ≈ 1.4h (单题均值 2.5s)

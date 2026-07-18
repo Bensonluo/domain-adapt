@@ -1,0 +1,56 @@
+{
+  "base": "phase1/results/week12_lora_cpt/50_50_fused",
+  "method": "response_distillation_SFT",
+  "teacher": "Qwen3-30B-A3B-Instruct-2507-MLX-4bit (mlx_lm direct, greedy)",
+  "n_train": 2000,
+  "base_metrics": {
+    "cmexam_holdout": 0.512,
+    "cmmlu_medical": 0.5663,
+    "cmmlu_general": 0.6675
+  },
+  "teacher_accuracy_vs_gold": {
+    "n": 2000,
+    "acc": 0.8645,
+    "compliant": 1.0
+  },
+  "grpo_reference": {
+    "cmexam_holdout": 0.534,
+    "cmexam_delta": 0.022,
+    "label": "week17 GRPO (mcq_base_fused)"
+  },
+  "arms": [
+    {
+      "variant": "real",
+      "cmexam_holdout": 0.536,
+      "cmexam_delta": 0.024,
+      "cmmlu_medical": 0.5413,
+      "cmmlu_medical_delta": -0.025,
+      "cmmlu_general": 0.6625,
+      "cmmlu_general_delta": -0.005,
+      "cmexam_n": 500,
+      "cmexam_unparseable": 0
+    },
+    {
+      "variant": "distill",
+      "cmexam_holdout": 0.53,
+      "cmexam_delta": 0.018,
+      "cmmlu_medical": 0.565,
+      "cmmlu_medical_delta": -0.0013,
+      "cmmlu_general": 0.675,
+      "cmmlu_general_delta": 0.0075,
+      "cmexam_n": 500,
+      "cmexam_unparseable": 0
+    },
+    {
+      "variant": "mixed",
+      "cmexam_holdout": 0.524,
+      "cmexam_delta": 0.012,
+      "cmmlu_medical": 0.5637,
+      "cmmlu_medical_delta": -0.0026,
+      "cmmlu_general": 0.6725,
+      "cmmlu_general_delta": 0.005,
+      "cmexam_n": 500,
+      "cmexam_unparseable": 0
+    }
+  ]
+}
