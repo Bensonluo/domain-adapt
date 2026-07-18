@@ -82,3 +82,8 @@ phase1/results/week15_dpo_smoke*
 phase1/results/**/_smoke*/
 phase1/results/**/_smoke_qwen3/
 phase1/results/**/_probe*/
+
+# week16 失败模式: sweep log 是 progress bar 噪声 (照 week12 run_real_eval.log); detached pid 文件不进 git
+# 真实结果 (loss_log/run_config/scores/*/JSON) 仍追踪, 与 week15_dpo 同口径; 大权重由全局 *.safetensors 挡掉
+phase1/results/week16_failmode/sweep_run.log
+phase1/results/week16_failmode/.*_pid

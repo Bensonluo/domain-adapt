@@ -1,0 +1,156 @@
+{
+  "base_50_50_fused": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.27,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.348
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "noise_0.1": {
+    "n": 100,
+    "sum_logp_winrate": 0.02,
+    "mean_logp_winrate": 0.29,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.154,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.377
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "noise_0.3": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.28,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.362
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "noise_0.5": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.27,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.348
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "beta_0.01": {
+    "n": 100,
+    "sum_logp_winrate": 0.03,
+    "mean_logp_winrate": 0.39,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.231,
+        "mean_wr": 0.385
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.478
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "beta_10": {
+    "n": 100,
+    "sum_logp_winrate": 0.01,
+    "mean_logp_winrate": 0.28,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.077,
+        "mean_wr": 0.154
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.362
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.056
+      }
+    }
+  },
+  "ipo_0.3": {
+    "n": 100,
+    "sum_logp_winrate": 0.03,
+    "mean_logp_winrate": 0.45,
+    "buckets": {
+      "matched": {
+        "n": 13,
+        "sum_wr": 0.231,
+        "mean_wr": 0.462
+      },
+      "mid": {
+        "n": 69,
+        "sum_wr": 0.0,
+        "mean_wr": 0.522
+      },
+      "skewed": {
+        "n": 18,
+        "sum_wr": 0.0,
+        "mean_wr": 0.167
+      }
+    }
+  }
+}
