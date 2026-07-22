@@ -1,0 +1,14 @@
+{
+  "cmmlu_anatomy": 0.47,
+  "cmmlu_clinical_knowledge": 0.52,
+  "cmmlu_college_medicine": 0.64,
+  "cmmlu_professional_medicine": 0.58,
+  "cmmlu_genetics": 0.49,
+  "cmmlu_traditional_chinese_medicine": 0.62,
+  "cmmlu_virology": 0.66,
+  "cmmlu_nutrition": 0.59,
+  "cmmlu_world_history": 0.75,
+  "cmmlu_high_school_physics": 0.55,
+  "cmmlu_economics": 0.63,
+  "cmmlu_marxist_theory": 0.79
+}

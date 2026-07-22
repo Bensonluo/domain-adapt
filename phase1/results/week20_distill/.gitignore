@@ -1,0 +1,13 @@
+# 大权重不进 git (可再生):
+#   adapter_model.safetensors = LoRA 训练产物 (phase1/.venv 重训可生)
+#   *_fused/model.safetensors = PEFT merge_and_unload 产物 (run_dpo_eval 重 merge 可生)
+# 原则同 week12-19: 只 track configs / scores / logs / json / 数据, 绝不 track 权重.
+**/adapter_model.safetensors
+*_fused/model.safetensors
+*_fused/*.safetensors
+# tokenizer.json (11MB × 12 拷贝 = 132MB 纯重复, 全是同一 Qwen3-1.7B tokenizer).
+# 权重未存 → dirs 本就不完整, re-merge/re-eval 会从 base 重生 tokenizer. 只留 tokenizer_config.json.
+# (比 week15-19 更精简; 那几周 commit 了 tokenizer.json 但属历史冗余, 不再延续.)
+**/tokenizer.json
+# teacher logits smoke 残留 (只留 full)
+data/teacher_topk_logits_smoke.jsonl

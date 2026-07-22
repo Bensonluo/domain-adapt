@@ -1,0 +1,25 @@
+{
+  "method": "logit_distillation_KD",
+  "model": "phase1/results/week12_lora_cpt/50_50_fused",
+  "data": "phase1/results/week19_distill/data/distill_sft.jsonl",
+  "logits": "phase1/results/week20_distill/data/teacher_topk_logits.jsonl",
+  "alpha": 0.5,
+  "temperature": 5.0,
+  "topk": 20,
+  "lr": 2e-05,
+  "epochs": 3.0,
+  "max_steps": 0,
+  "limit": 0,
+  "max_length": 1536,
+  "dtype": "bfloat16",
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.05
+  },
+  "batch_size": 4,
+  "grad_accum": 4,
+  "seed": 123,
+  "n_samples": 2000,
+  "device": "mps"
+}

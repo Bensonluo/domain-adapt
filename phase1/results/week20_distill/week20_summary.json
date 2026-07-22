@@ -1,0 +1,123 @@
+{
+  "base": "phase1/results/week12_lora_cpt/50_50_fused",
+  "method": "week20_distillation_deep_dive (PartA logit_KD + PartB on_policy)",
+  "teacher": "Qwen3-30B-A3B-Instruct-2507-MLX-4bit (mlx_lm, 4bit)",
+  "n_train": 2000,
+  "base_metrics": {
+    "cmexam_holdout": 0.512,
+    "cmmlu_medical": 0.5663,
+    "cmmlu_general": 0.6675
+  },
+  "teacher_train_acc_vs_gold": 0.892,
+  "references": {
+    "grpo": {
+      "label": "GRPO(w17)",
+      "cmexam": 0.534,
+      "d_cm": 0.022,
+      "med": 0.5687,
+      "d_med": 0.0024,
+      "gen": 0.6725,
+      "d_gen": 0.005
+    },
+    "week19_response": {
+      "real": {
+        "label": "real(w19)",
+        "cmexam": 0.536,
+        "d_cm": 0.024,
+        "med": 0.5413,
+        "d_med": -0.025,
+        "gen": 0.6625,
+        "d_gen": -0.005
+      },
+      "distill": {
+        "label": "distill(w19)",
+        "cmexam": 0.53,
+        "d_cm": 0.018,
+        "med": 0.565,
+        "d_med": -0.0013,
+        "gen": 0.675,
+        "d_gen": 0.0075
+      }
+    }
+  },
+  "arms": [
+    {
+      "variant": "kd_t2",
+      "cmexam_holdout": 0.524,
+      "cmexam_delta": 0.012,
+      "cmmlu_medical": 0.5687,
+      "cmmlu_medical_delta": 0.0024,
+      "cmmlu_general": 0.685,
+      "cmmlu_general_delta": 0.0175,
+      "cmexam_n": 500,
+      "alpha": 0.5,
+      "temperature": 2.0,
+      "kd_method": "logit_KD"
+    },
+    {
+      "variant": "kd_t5",
+      "cmexam_holdout": 0.528,
+      "cmexam_delta": 0.016,
+      "cmmlu_medical": 0.5625,
+      "cmmlu_medical_delta": -0.0038,
+      "cmmlu_general": 0.6775,
+      "cmmlu_general_delta": 0.01,
+      "cmexam_n": 500,
+      "alpha": 0.5,
+      "temperature": 5.0,
+      "kd_method": "logit_KD"
+    },
+    {
+      "variant": "kd_pure",
+      "cmexam_holdout": 0.544,
+      "cmexam_delta": 0.032,
+      "cmmlu_medical": 0.5675,
+      "cmmlu_medical_delta": 0.0012,
+      "cmmlu_general": 0.6875,
+      "cmmlu_general_delta": 0.02,
+      "cmexam_n": 500,
+      "alpha": 0.0,
+      "temperature": 2.0,
+      "kd_method": "logit_KD"
+    },
+    {
+      "variant": "rs_mcq",
+      "cmexam_holdout": 0.524,
+      "cmexam_delta": 0.012,
+      "cmmlu_medical": 0.5763,
+      "cmmlu_medical_delta": 0.01,
+      "cmmlu_general": 0.6625,
+      "cmmlu_general_delta": -0.005,
+      "cmexam_n": 500,
+      "kd_method": "onpolicy_SFT",
+      "data_source": "rs_mcq_sft.jsonl",
+      "teacher_fallback_rate": 0.2205
+    },
+    {
+      "variant": "rs_teacher",
+      "cmexam_holdout": 0.51,
+      "cmexam_delta": -0.002,
+      "cmmlu_medical": 0.5713,
+      "cmmlu_medical_delta": 0.005,
+      "cmmlu_general": 0.68,
+      "cmmlu_general_delta": 0.0125,
+      "cmexam_n": 500,
+      "kd_method": "onpolicy_SFT",
+      "data_source": "rs_teacher_sft.jsonl",
+      "teacher_fallback_rate": 0.0
+    },
+    {
+      "variant": "rs_both",
+      "cmexam_holdout": 0.518,
+      "cmexam_delta": 0.006,
+      "cmmlu_medical": 0.5787,
+      "cmmlu_medical_delta": 0.0124,
+      "cmmlu_general": 0.67,
+      "cmmlu_general_delta": 0.0025,
+      "cmexam_n": 500,
+      "kd_method": "onpolicy_SFT",
+      "data_source": "rs_both_sft.jsonl",
+      "teacher_fallback_rate": 0.2205
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "model": "phase1/results/week20_distill/rs_teacher_fused",
+  "n": 500,
+  "accuracy": 0.51,
+  "correct": 255,
+  "unparseable": 1,
+  "unparseable_rate": 0.002,
+  "max_new_tokens": 48
+}

@@ -1,118 +1,42 @@
 """
-Phase 1 Week 20: Feature Distillation
+Phase1 Week20 Part A: Feature Distillation (入口别名 → train_logit_kd.py)
 
-对齐 teacher 和 student 的中间层表示。
+★ 为什么 logit-KD 而非 hidden-state 对齐 (week20 plan Part A.1 决策):
+  传统 feature distill = 中间层 hidden state 对齐 (DistilBERT, 加 projection layer).
+  但**跨框架 (MLX teacher 30B + HF student 1.7B) hidden state 不可行**:
+    mlx.core.Tensor vs torch.Tensor, 层命名/维度对齐复杂, 跨框架 projection 不可导.
+  → 现代生成式 LLM 的 feature distill 等价 = **logit-level KD** (Hinton KD on token logits):
+    学 teacher 每个 token 位置的完整 soft 概率分布 (携带类间关系的 dark knowledge),
+    而非只 argmax (hard label = week19 distill 臂).
 
-Usage:
-    python phase1/week20/distill_feature.py \
-        --teacher Qwen/Qwen2.5-14B \
-        --student Qwen/Qwen2.5-3B \
-        --output phase1/results/week20_distill_feature/
+  经典 hidden-state 蒸馏 (FeatureDistillationLoss = MSE on projected hidden, 见下文注释)
+  是 encoder 模型时代的做法; 对 decoder LLM + Mac 跨框架约束, logit KD 是落地等价路径.
 
-核心学习目标：
-1. 理解 feature distillation 和 response distillation 的本质区别
-2. 理解为什么要加 projection layer
-3. 思考：中间层表示包含了什么信息？为什么对齐它能提升效果？
+真实实现 (本模块为入口别名, 真代码在这些文件):
+  - kd_loss.py              — L = α·CE + (1-α)·T²·KL_restricted (fp32, 5 单测过)
+  - extract_teacher_logits.py — teacher MLX forward 存 top-K raw logits
+  - train_logit_kd.py       — Trainer + 自定义 compute_loss + PEFT-LoRA (本模块 main 别名)
+  - run_feature.sh          — 三臂 (kd_t2/kd_t5/kd_pure) detached 编排
+
+经典 hidden-state 参考 (不用于本周, 仅对照):
+  class FeatureDistillationLoss:                                   # encoder 时代
+      def __init__(self, t_dim, s_dim): self.proj = nn.Linear(s_dim, t_dim)
+      def forward(self, t_hidden, s_hidden):
+          return F.mse_loss(self.proj(s_hidden), t_hidden.detach())  # 跨框架不可导 → 弃
+
+用法 (与 train_logit_kd.py 完全一致, 本入口保留旧文件名兼容):
+  phase1/.venv/bin/python phase1/week20/distill_feature.py \\
+    --model phase1/results/week12_lora_cpt/50_50_fused \\
+    --data phase1/results/week19_distill/data/distill_sft.jsonl \\
+    --logits phase1/results/week20_distill/data/teacher_topk_logits.jsonl \\
+    --output phase1/results/week20_distill/kd_t2 --alpha 0.5 --temperature 2.0
 """
 
-import argparse
-import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+# 真实 KD loss 可从此入口直接 import (向后兼容旧 stub 的 from distill_feature import ...)
+from kd_loss import kd_loss  # noqa: F401
 
-
-class FeatureDistillationLoss(nn.Module):
-    """Feature-level 蒸馏损失：对齐中间层表示"""
-
-    def __init__(self, teacher_hidden_dim: int, student_hidden_dim: int):
-        super().__init__()
-        self.projection = nn.Linear(student_hidden_dim, teacher_hidden_dim)
-
-    def forward(self, teacher_hidden: torch.Tensor, student_hidden: torch.Tensor) -> torch.Tensor:
-        projected_student = self.projection(student_hidden)
-        return F.mse_loss(projected_student, teacher_hidden.detach())
-
-
-class DistillationTrainer:
-    """Feature distillation trainer"""
-
-    def __init__(self, teacher, student, tokenizer, layer_map: dict | None = None):
-        self.teacher = teacher
-        self.student = student
-        self.tokenizer = tokenizer
-        self.layer_map = layer_map  # {student_layer_idx: teacher_layer_idx}
-
-        # Freeze teacher
-        for param in self.teacher.parameters():
-            param.requires_grad = False
-
-    def train_step(self, batch):
-        # [YOUR CODE] 单次训练步骤
-        # 提示：
-        #   1. self.teacher.eval(); self.student.train()
-        #   2. teacher forward → 用 hook 或 register_forward_hook 收集 hidden states
-        #   3. student forward → 收集对应层的 hidden states
-        #   4. 用 FeatureDistillationLoss 计算 MSE loss
-        #   5. loss.backward() — 只更新 student（teacher 已 frozen）
-        #   6. 返回 loss.item()
-        # 思考：为什么要 detach() teacher 的 hidden states？
-        pass
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Feature Distillation")
-    parser.add_argument("--teacher", required=True, help="Teacher model name or path")
-    parser.add_argument("--student", required=True, help="Student model name or path")
-    parser.add_argument("--data", default="phase1/data/processed/cpt/")
-    parser.add_argument("--output", required=True)
-    args = parser.parse_args()
-
-    os.makedirs(args.output, exist_ok=True)
-
-    # 1. [YOUR CODE] 加载 teacher + student 模型
-    # 提示：
-    #   - teacher: 大模型（如 Qwen/Qwen2.5-14B）
-    #   - student: 小模型（如 Qwen/Qwen2.5-3B）
-    #   - teacher 加载后设置 eval() + requires_grad=False
-    #   - 思考：feature distillation 要求 teacher 和 student 架构相似吗？
-    teacher = None  # TODO: 加载 teacher
-    student = None  # TODO: 加载 student
-    tokenizer = None  # TODO: 加载 tokenizer
-
-    # 2. [YOUR CODE] 自动检测 hidden dims + 创建 layer map
-    # 提示：
-    #   - 比较 teacher.config.hidden_size 和 student.config.hidden_size
-    #   - 如果不同，FeatureDistillationLoss 会自动创建 projection
-    #   - layer_map: 决定 student 的哪层对齐 teacher 的哪层
-    #   - 思考：layer_map 怎么设计最合理？均匀映射还是最后一层？
-    teacher_hidden_dim = None  # TODO: teacher.config.hidden_size
-    student_hidden_dim = None  # TODO: student.config.hidden_size
-    layer_map = None  # TODO: 设计 layer 映射
-
-    # 3. 创建 FeatureDistillationLoss（已实现）
-    distill_loss_fn = FeatureDistillationLoss(teacher_hidden_dim, student_hidden_dim)
-
-    # 4. [YOUR CODE] 加载数据 + 构建训练循环
-    # 提示：
-    #   - 加载 CPT 语料（和 week11 同样的数据）
-    #   - 用标准 PyTorch DataLoader
-    #   - 每轮：batch → train_step() → 记录 loss
-    #   - 思考：feature distillation 的 loss 和 next-token prediction loss 怎么组合？
-    dataset = None  # TODO: 加载数据
-
-    # 5. [YOUR CODE] 训练 + 评估
-    # trainer = DistillationTrainer(teacher, student, tokenizer, layer_map)
-    # for epoch in range(num_epochs):
-    #     for batch in dataloader:
-    #         loss = trainer.train_step(batch)
-    #         print(f"loss: {loss:.4f}")
-    print("TODO: Implement training loop")
-
-    # 6. [YOUR CODE] 保存 student 模型
-    # student.save_pretrained(args.output)
-    print(f"TODO: Save distilled model to {args.output}")
-
+# main 别名 → 真实训练入口 (保留文件名作为 entry point, 旧脚本无需改路径)
+from train_logit_kd import main  # noqa: F401
 
 if __name__ == "__main__":
     main()

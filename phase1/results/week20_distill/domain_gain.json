@@ -1,0 +1,11 @@
+{
+  "base_medical_cn": 0.5663,
+  "runs": {
+    "rs_mcq": 0.01,
+    "rs_teacher": 0.005,
+    "rs_both": 0.0124,
+    "kd_t2": 0.0024,
+    "kd_t5": -0.0038,
+    "kd_pure": 0.0012
+  }
+}
