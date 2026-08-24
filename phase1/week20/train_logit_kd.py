@@ -35,6 +35,7 @@ import csv
 import json
 import os
 import random
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -51,7 +52,6 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 import torch  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-import sys
 sys.path.insert(0, str(HERE))  # kd_loss 同目录
 from kd_loss import kd_loss  # noqa: E402
 
@@ -98,7 +98,7 @@ class KDSample:
 class KDDataset:
     """distill_sft.jsonl ⊕ teacher_topk_logits.jsonl → KDSample list."""
 
-    def __init__(self, sft_path: str, logits_path: str, tokenizer, max_length: int):
+    def __init__(self, sft_path: str, logits_path: str, tokenizer, max_length: int, topk: int = 20):
         self.tok = tokenizer
         self.max_length = max_length
         self.pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
@@ -110,7 +110,11 @@ class KDDataset:
                 r = json.loads(line)
                 tlogits[r["question_id"]] = r
         # sft rows
-        sft = [json.loads(l) for l in Path(sft_path).read_text(encoding="utf-8").splitlines() if l.strip()]
+        sft = [
+            json.loads(line)
+            for line in Path(sft_path).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
 
         self.samples = []
         n_mismatch = 0
@@ -126,6 +130,12 @@ class KDDataset:
                 continue
             comp_ids = tr["completion_token_ids"]
             positions = tr["positions"]
+            if any(
+                len(position.get("topk_tokens", [])) != topk
+                or len(position.get("topk_logits", [])) != topk
+                for position in positions
+            ):
+                raise ValueError(f"qid={qid} teacher logits do not match --topk {topk}")
             # 截断 keep_start (completion 字母在前, 截尾丢解释不丢字母)
             total = len(prompt_ids) + len(comp_ids)
             if total > max_length:
@@ -205,7 +215,6 @@ class KDTrainer(__import__("transformers").Trainer):
         self._dbg_calls = 0
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        import torch
         input_ids = inputs["input_ids"]
         attn = inputs["attention_mask"]
         labels = inputs["labels"]
@@ -283,11 +292,18 @@ def parse_args():
 
 def main():
     import torch
-    import transformers
     from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
     from peft import LoraConfig, get_peft_model
 
     args = parse_args()
+    if not 0.0 <= args.alpha <= 1.0:
+        raise ValueError(f"--alpha must be in [0, 1], got {args.alpha}")
+    if args.temperature <= 0.0:
+        raise ValueError(f"--temperature must be > 0, got {args.temperature}")
+    if args.topk <= 0:
+        raise ValueError(f"--topk must be > 0, got {args.topk}")
+    if args.max_length <= 1:
+        raise ValueError(f"--max-length must be > 1, got {args.max_length}")
     os.makedirs(args.output, exist_ok=True)
     device = get_device()
     random.seed(args.seed)
@@ -311,10 +327,12 @@ def main():
     model.print_trainable_parameters()
 
     # 数据
-    ds = KDDataset(args.data, args.logits, tokenizer, args.max_length)
+    ds = KDDataset(args.data, args.logits, tokenizer, args.max_length, args.topk)
     if args.limit and args.limit > 0:
         ds.samples = ds.samples[: args.limit]
         print(f"[kd-train] limit → {len(ds.samples)} 条 (smoke)", flush=True)
+    if not ds.samples:
+        raise ValueError("no aligned KD samples remain after loading/truncation")
     collator = KDCollator(pad_id=tokenizer.pad_token_id, k=args.topk)
 
     mp_kwargs = {"bf16": True} if args.dtype == "bfloat16" else ({"fp16": True} if args.dtype == "float16" else {})

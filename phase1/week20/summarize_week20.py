@@ -57,7 +57,11 @@ def fallback_rate(sweep, v):
     p = sweep / "data" / f"{v}_sft.jsonl"
     if not p.exists():
         return None
-    rows = [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [
+        json.loads(line)
+        for line in p.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     if not rows:
         return None
     fb = sum(1 for r in rows if r.get("source") == "teacher_fallback")
@@ -126,12 +130,17 @@ def main():
 
     # ── 大对照表 ──
     def row(label, cm, dcm, med, dmed, gen, dgen, note=""):
-        f = lambda x, d=None, sign=True: ("  -   " if x is None else f"{x:.4f}")
-        fd = lambda d: ("  -   " if d is None else f"{d:+.4f}")
-        print(f"{label:<16} {f(cm):>8} {fd(dcm):>8} {f(med):>9} {fd(dmed):>8} {f(gen):>9} {fd(dgen):>8}  {note}")
+        def metric(value):
+            return "  -   " if value is None else f"{value:.4f}"
+
+        def delta(value):
+            return "  -   " if value is None else f"{value:+.4f}"
+
+        print(f"{label:<16} {metric(cm):>8} {delta(dcm):>8} {metric(med):>9} "
+              f"{delta(dmed):>8} {metric(gen):>9} {delta(dgen):>8}  {note}")
 
     print("\n" + "=" * 96)
-    print(f"  Week20 蒸馏深度专题 (base = 50_50_fused | teacher 30B MLX | n_train=2000)")
+    print("  Week20 蒸馏深度专题 (base = 50_50_fused | teacher 30B MLX | n_train=2000)")
     print("=" * 96)
     print(f"{'臂':<16} {'CMExam':>8} {'Δ':>8} {'CMMLU医':>9} {'Δ':>8} {'CMMLU通':>9} {'Δ':>8}")
     print("-" * 96)
@@ -157,7 +166,7 @@ def main():
     row(GRPO_REF["label"], GRPO_REF["cmexam"], GRPO_REF["d_cm"], GRPO_REF["med"],
         GRPO_REF["d_med"], GRPO_REF["gen"], GRPO_REF["d_gen"], "(RL 对照)")
     print("=" * 96)
-    print(f"  teacher train acc vs gold = 0.892 (Part A 天花板参考; holdout teacher acc ≈0.865 week19)")
+    print("  teacher train acc vs gold = 0.892 (Part A 天花板参考; holdout teacher acc ≈0.865 week19)")
     print(f"\n[✓] week20_summary.json → {sweep}/week20_summary.json")
 
 

@@ -27,6 +27,10 @@ def kd_loss(student_logits, labels, teacher_tokens, teacher_logits_topk,
     """
     返回 (total, ce, kl) — 拆开便于训练时分别 log.
     """
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError(f"alpha must be in [0, 1], got {alpha}")
+    if temperature <= 0.0:
+        raise ValueError(f"temperature must be > 0, got {temperature}")
     V = student_logits.size(-1)
 
     # ★ 单份 fp32 副本 (CE + gather 复用). 原写法 .float() 各调一次 → 造两份全 vocab
@@ -35,11 +39,17 @@ def kd_loss(student_logits, labels, teacher_tokens, teacher_logits_topk,
     sl_f = student_logits.float()
 
     # ① CE on gold (fp32)
-    ce = F.cross_entropy(
-        sl_f.reshape(-1, V),
-        labels.reshape(-1),
-        ignore_index=ignore_index,
-    )
+    valid = labels != ignore_index
+    if valid.any():
+        ce = F.cross_entropy(
+            sl_f.reshape(-1, V),
+            labels.reshape(-1),
+            ignore_index=ignore_index,
+        )
+    else:
+        # cross_entropy returns NaN when every label is ignored.  A fully
+        # masked micro-batch should contribute a differentiable zero instead.
+        ce = sl_f.sum() * 0.0
 
     # ② student 在 teacher top-K token 上的 logits: gather (复用同一份 fp32)
     student_topk = torch.gather(
@@ -55,7 +65,7 @@ def kd_loss(student_logits, labels, teacher_tokens, teacher_logits_topk,
     kl_per_pos = (t.exp() * (t - s)).sum(dim=-1)                  # (B, L)
 
     # 只 completion 位置 (labels != -100) 平均
-    mask = (labels != ignore_index).to(kl_per_pos.dtype)         # (B, L)
+    mask = valid.to(kl_per_pos.dtype)                            # (B, L)
     denom = mask.sum().clamp_min(1.0)
     kl = (kl_per_pos * mask).sum() / denom
 
