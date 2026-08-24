@@ -1,0 +1,201 @@
+{
+  "experiment": "50% synthetic replacement",
+  "control": {
+    "label": "week19_real_2000",
+    "accuracy": 0.538,
+    "n": 500
+  },
+  "treatment": {
+    "label": "week21_real1000_synthetic1000",
+    "accuracy": 0.53,
+    "n": 500
+  },
+  "delta": -0.008,
+  "acceptance_threshold": -0.02,
+  "point_estimate_acceptable": true,
+  "statistical_noninferiority_established": false,
+  "conclusion": "point estimate meets operational margin, but statistical noninferiority is inconclusive",
+  "paired_statistics": {
+    "n_pairs": 500,
+    "control_accuracy": 0.538,
+    "treatment_accuracy": 0.53,
+    "delta": -0.008,
+    "noninferiority_margin": -0.02,
+    "point_estimate_meets_margin": true,
+    "paired_bootstrap": {
+      "samples": 20000,
+      "seed": 123,
+      "confidence_level": 0.95,
+      "delta_interval": [
+        -0.034,
+        0.018
+      ],
+      "noninferiority_established": false
+    },
+    "mcnemar_exact": {
+      "control_only_correct": 23,
+      "treatment_only_correct": 19,
+      "discordant": 42,
+      "two_sided_p": 0.6439689563703723
+    }
+  },
+  "holdout_similarity": {
+    "metric": "character_3gram_jaccard",
+    "threshold": 0.78,
+    "sources": {
+      "seeds": {
+        "n": 100,
+        "above_or_equal_threshold": 1,
+        "maximum": 0.9433962264150944,
+        "p95": 0.4375
+      },
+      "self": {
+        "n": 1000,
+        "above_or_equal_threshold": 0,
+        "maximum": 0.47368421052631576,
+        "p95": 0.16363636363636364
+      },
+      "evol": {
+        "n": 250,
+        "above_or_equal_threshold": 0,
+        "maximum": 0.17391304347826086,
+        "p95": 0.13333333333333333
+      },
+      "replacement_all": {
+        "n": 2000,
+        "above_or_equal_threshold": 12,
+        "maximum": 1.0,
+        "p95": 0.3333333333333333
+      }
+    },
+    "replacement_high_overlap_by_source": {
+      "real": 12,
+      "synthetic": 0
+    }
+  },
+  "replacement_manifest": {
+    "n_total": 2000,
+    "n_real": 1000,
+    "n_synthetic": 1000,
+    "synthetic_fraction": 0.5,
+    "seed": 123,
+    "real_sft": "phase1/results/week19_distill/data/real_sft.jsonl",
+    "synthetic_inputs": [
+      "phase1/results/week21_synthetic/data/evol_instruct.jsonl",
+      "phase1/results/week21_synthetic/data/self_instruct.jsonl"
+    ],
+    "holdout": "phase1/data/processed/cmexam/test.jsonl",
+    "rejected_exact_holdout_matches": 0,
+    "unique_replacement_ids": 2000,
+    "synthetic_method_distribution": {
+      "evol_instruct": 250,
+      "self_instruct": 750
+    }
+  },
+  "generation": {
+    "self": {
+      "backend": "mlx",
+      "model": "/Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit",
+      "target": 1000,
+      "accepted": 1000,
+      "raw_generations": 335,
+      "acceptance_rate": 0.811688,
+      "similarity_threshold": 0.78,
+      "reject_reasons": {
+        "too_similar": 211,
+        "exact_duplicate": 60
+      },
+      "complete": true
+    },
+    "evol": {
+      "backend": "mlx",
+      "model": "/Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit",
+      "source_count": 250,
+      "accepted": 250,
+      "acceptance_rate": 1.0,
+      "reject_reasons": {
+        "option_keys": 1,
+        "insufficient_stages": 20,
+        "insufficient_evolution": 12
+      },
+      "complete": true
+    }
+  },
+  "quality_metrics": {
+    "methodology": {
+      "self_bleu": "dependency-free nearest-neighbour character-bigram Jaccard proxy; lower means more diverse",
+      "correctness": "structural validity and answer-text support are automated proxies; the separate manual review was performed by an AI, not a clinician or human annotator",
+      "distribution": "question length and answer-label Jensen-Shannon divergence"
+    },
+    "counts": {
+      "self": 1000,
+      "evolved": 250,
+      "synthetic_total": 1250,
+      "real_total": 42223,
+      "real_comparison_sample": 5000
+    },
+    "validity": {
+      "synthetic_valid_rate": 1.0,
+      "self_errors": {},
+      "evolved_errors": {},
+      "real_errors": {
+        "explanation_too_short": 7457,
+        "question_too_short": 3117,
+        "option_count": 2,
+        "invalid_answer": 1649,
+        "duplicate_options": 38,
+        "option_keys": 11
+      },
+      "answer_explanation_support_rate": 0.772
+    },
+    "diversity": {
+      "exact_duplicate_count": 0,
+      "exact_duplicate_rate": 0.0,
+      "distinct_1": 0.021984,
+      "distinct_2": 0.131606,
+      "approx_self_bleu": 0.471808
+    },
+    "novelty_vs_real": {
+      "mean_max_3gram_jaccard": 0.087475,
+      "p95_max_3gram_jaccard": 0.14876,
+      "exact_real_match_count": 0
+    },
+    "distribution_shift": {
+      "mean_question_chars_synthetic": 66.079,
+      "mean_question_chars_real": 32.491,
+      "mean_length_ratio": 2.033794,
+      "answer_label_js_divergence": 0.09738,
+      "synthetic_answer_distribution": {
+        "A": 255,
+        "B": 539,
+        "C": 307,
+        "D": 117,
+        "E": 32
+      },
+      "real_answer_distribution": {
+        "A": 938,
+        "B": 1029,
+        "C": 1038,
+        "D": 1069,
+        "E": 926
+      }
+    },
+    "evolution": {
+      "count": 250,
+      "depth_distribution": {
+        "1": 84,
+        "2": 83,
+        "3": 83
+      }
+    },
+    "manual_review": {
+      "path": "phase1/results/week21_synthetic/human_audit.jsonl",
+      "sample_size": 30,
+      "reviewed": 30,
+      "accuracy": 0.833333,
+      "reviewer_kinds": [
+        "ai_nonclinician"
+      ]
+    }
+  }
+}

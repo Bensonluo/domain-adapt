@@ -1,0 +1,14 @@
+{
+  "backend": "mlx",
+  "model": "/Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit",
+  "target": 1000,
+  "accepted": 1000,
+  "raw_generations": 335,
+  "acceptance_rate": 0.811688,
+  "similarity_threshold": 0.78,
+  "reject_reasons": {
+    "too_similar": 211,
+    "exact_duplicate": 60
+  },
+  "complete": true
+}

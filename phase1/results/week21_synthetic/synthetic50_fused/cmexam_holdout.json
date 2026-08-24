@@ -1,0 +1,14 @@
+{
+  "model": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/results/week21_synthetic/synthetic50_fused",
+  "data": "/Users/luopeng/Documents/GitHub/domain-adapt/phase1/data/processed/cmexam/holdout.jsonl",
+  "n": 500,
+  "accuracy": 0.53,
+  "correct": 265,
+  "unparseable": 0,
+  "unparseable_rate": 0.0,
+  "max_new_tokens": 16,
+  "batch_size": 8,
+  "decoding": "greedy",
+  "device": "cpu",
+  "dtype": "torch.float32"
+}

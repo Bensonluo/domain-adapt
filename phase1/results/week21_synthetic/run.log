@@ -1,0 +1,228 @@
+
+[00:34:26] prepare 100 leakage-clean seeds
+[seeds] wrote 100 holdout-clean seeds -> phase1/results/week21_synthetic/data/seed_instructions.jsonl
+
+[00:34:27] Self-Instruct: target=1000
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 2.7s
+[self] generation=10/1000 accepted=28/1000
+[self] generation=20/1000 accepted=58/1000
+[self] generation=30/1000 accepted=72/1000
+
+[00:45:39] Self-Instruct: target=1000
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 3.1s
+[self] generation=40/1000 accepted=144/1000
+[self] generation=50/1000 accepted=181/1000
+[self] generation=60/1000 accepted=219/1000
+[self] generation=70/1000 accepted=255/1000
+[self] generation=80/1000 accepted=278/1000
+[self] generation=90/1000 accepted=306/1000
+[self] generation=100/1000 accepted=341/1000
+[self] generation=110/1000 accepted=371/1000
+[self] generation=120/1000 accepted=396/1000
+[self] generation=130/1000 accepted=428/1000
+[self] generation=140/1000 accepted=452/1000
+[self] generation=150/1000 accepted=483/1000
+[self] generation=160/1000 accepted=506/1000
+[self] generation=170/1000 accepted=540/1000
+[self] generation=180/1000 accepted=570/1000
+[self] generation=190/1000 accepted=603/1000
+[self] generation=200/1000 accepted=624/1000
+[self] generation=210/1000 accepted=652/1000
+[self] generation=220/1000 accepted=682/1000
+[self] generation=230/1000 accepted=713/1000
+[self] generation=240/1000 accepted=747/1000
+[self] generation=250/1000 accepted=771/1000
+[self] generation=260/1000 accepted=800/1000
+[self] generation=270/1000 accepted=836/1000
+[self] generation=280/1000 accepted=863/1000
+[self] generation=290/1000 accepted=888/1000
+[self] generation=300/1000 accepted=905/1000
+[self] generation=310/1000 accepted=930/1000
+[self] generation=320/1000 accepted=961/1000
+[self] generation=330/1000 accepted=991/1000
+[self] generation=335/1000 accepted=1000/1000
+[self] wrote 1000 accepted records -> phase1/results/week21_synthetic/data/self_instruct.jsonl
+
+[02:28:59] Evol-Instruct: target=250, depth cycles 1..3
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 1.7s
+
+[02:32:57] Evol-Instruct: target=250, depth cycles 1..3
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 1.1s
+[evol] retry source=4 attempt=2/4: insufficient_stages
+[evol] retry source=4 attempt=3/4: insufficient_stages
+[evol] retry source=4 attempt=4/4: insufficient_stages
+[evol] retry source=5 attempt=2/4: insufficient_stages
+[evol] retry source=5 attempt=3/4: insufficient_stages
+
+[02:35:44] Evol-Instruct: target=250, depth cycles 1..3
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 1.0s
+[evol] retry source=5 attempt=4/8: insufficient_evolution
+[evol] retry source=23 attempt=1/8: insufficient_evolution
+[evol] generated 25/250
+[evol] generated 50/250
+[evol] retry source=70 attempt=1/8: insufficient_evolution
+[evol] retry source=71 attempt=1/8: insufficient_stages
+[evol] generated 75/250
+[evol] retry source=86 attempt=1/8: insufficient_evolution
+[evol] retry source=98 attempt=1/8: insufficient_evolution
+[evol] retry source=98 attempt=2/8: insufficient_evolution
+[evol] generated 100/250
+[evol] generated 125/250
+[evol] retry source=134 attempt=1/8: insufficient_stages
+[evol] retry source=134 attempt=2/8: insufficient_stages
+[evol] retry source=134 attempt=3/8: insufficient_stages
+[evol] retry source=143 attempt=1/8: insufficient_stages
+[evol] generated 150/250
+[evol] generated 175/250
+[evol] retry source=182 attempt=1/8: insufficient_evolution
+[evol] retry source=182 attempt=2/8: insufficient_stages
+[evol] retry source=182 attempt=3/8: insufficient_evolution
+[evol] retry source=182 attempt=4/8: insufficient_evolution
+[evol] retry source=182 attempt=5/8: insufficient_evolution
+[evol] retry source=182 attempt=6/8: insufficient_evolution
+
+[02:59:04] Evol-Instruct: target=250, depth cycles 1..3
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 1.0s
+[evol] generated 25/250
+[evol] generated 50/250
+[evol] generated 75/250
+[evol] generated 100/250
+[evol] generated 125/250
+[evol] generated 150/250
+[evol] generated 175/250
+[evol] generated 200/250
+[evol] retry source=200 attempt=1/8: insufficient_stages
+[evol] retry source=200 attempt=2/8: insufficient_stages
+[evol] retry source=200 attempt=3/8: insufficient_stages
+[evol] retry source=200 attempt=4/8: insufficient_stages
+[evol] retry source=200 attempt=5/8: insufficient_stages
+[evol] retry source=200 attempt=6/8: insufficient_stages
+
+[03:01:33] Evol-Instruct: target=250, depth cycles 1..3
+[generator] loaded /Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit in 1.0s
+[evol] generated 25/250
+[evol] generated 50/250
+[evol] generated 75/250
+[evol] generated 100/250
+[evol] generated 125/250
+[evol] generated 150/250
+[evol] generated 175/250
+[evol] generated 200/250
+[evol] retry source=218 attempt=1/12: insufficient_stages
+[evol] generated 225/250
+[evol] retry source=229 attempt=1/12: insufficient_evolution
+[evol] generated 250/250
+[evol] wrote 250/250 records -> phase1/results/week21_synthetic/data/evol_instruct.jsonl
+
+[03:05:55] quality measurement and audit sample
+[quality] metrics -> phase1/results/week21_synthetic/quality_metrics.json; audit sample -> phase1/results/week21_synthetic/human_audit.jsonl
+
+[03:06:42] prepare controlled 50% replacement treatment
+[replacement] 1000 real + 1000 synthetic -> phase1/results/week21_synthetic/data/replacement_50.jsonl
+
+[03:06:42] train treatment adapter
+[sft] device=mps | lr=2e-05 | epochs=3.0 | max_length=1536 | effective_batch=16
+[sft] 加载 baseline: phase1/results/week12_lora_cpt/50_50_fused
+[sft] SFT 数据 2000 条 (prompt/completion)
+{'loss': '1.822', 'grad_norm': '0.6399', 'learning_rate': '4.737e-06', 'entropy': '1.89', 'num_tokens': '4.24e+04', 'mean_token_accuracy': '0.6127', 'epoch': '0.08'}
+{'loss': '1.762', 'grad_norm': '0.6685', 'learning_rate': '1e-05', 'entropy': '1.832', 'num_tokens': '8.115e+04', 'mean_token_accuracy': '0.6178', 'epoch': '0.16'}
+{'loss': '1.741', 'grad_norm': '0.6358', 'learning_rate': '1.526e-05', 'entropy': '1.807', 'num_tokens': '1.171e+05', 'mean_token_accuracy': '0.6195', 'epoch': '0.24'}
+{'loss': '1.729', 'grad_norm': '0.6552', 'learning_rate': '1.994e-05', 'entropy': '1.782', 'num_tokens': '1.565e+05', 'mean_token_accuracy': '0.6227', 'epoch': '0.32'}
+{'loss': '1.712', 'grad_norm': '0.5822', 'learning_rate': '1.935e-05', 'entropy': '1.712', 'num_tokens': '1.962e+05', 'mean_token_accuracy': '0.6287', 'epoch': '0.4'}
+{'loss': '1.633', 'grad_norm': '0.6848', 'learning_rate': '1.875e-05', 'entropy': '1.547', 'num_tokens': '2.337e+05', 'mean_token_accuracy': '0.637', 'epoch': '0.48'}
+{'loss': '1.54', 'grad_norm': '0.7007', 'learning_rate': '1.816e-05', 'entropy': '1.424', 'num_tokens': '2.718e+05', 'mean_token_accuracy': '0.6525', 'epoch': '0.56'}
+{'loss': '1.501', 'grad_norm': '0.7467', 'learning_rate': '1.757e-05', 'entropy': '1.441', 'num_tokens': '3.102e+05', 'mean_token_accuracy': '0.6528', 'epoch': '0.64'}
+{'loss': '1.433', 'grad_norm': '0.7243', 'learning_rate': '1.697e-05', 'entropy': '1.431', 'num_tokens': '3.489e+05', 'mean_token_accuracy': '0.6618', 'epoch': '0.72'}
+{'loss': '1.522', 'grad_norm': '0.5697', 'learning_rate': '1.638e-05', 'entropy': '1.482', 'num_tokens': '3.901e+05', 'mean_token_accuracy': '0.6532', 'epoch': '0.8'}
+{'loss': '1.402', 'grad_norm': '0.7728', 'learning_rate': '1.579e-05', 'entropy': '1.418', 'num_tokens': '4.269e+05', 'mean_token_accuracy': '0.6666', 'epoch': '0.88'}
+{'loss': '1.449', 'grad_norm': '0.7063', 'learning_rate': '1.519e-05', 'entropy': '1.438', 'num_tokens': '4.661e+05', 'mean_token_accuracy': '0.6598', 'epoch': '0.96'}
+{'loss': '1.375', 'grad_norm': '0.7267', 'learning_rate': '1.46e-05', 'entropy': '1.377', 'num_tokens': '5.039e+05', 'mean_token_accuracy': '0.6719', 'epoch': '1.04'}
+{'loss': '1.331', 'grad_norm': '0.8381', 'learning_rate': '1.401e-05', 'entropy': '1.32', 'num_tokens': '5.423e+05', 'mean_token_accuracy': '0.6798', 'epoch': '1.12'}
+{'loss': '1.464', 'grad_norm': '0.8296', 'learning_rate': '1.341e-05', 'entropy': '1.42', 'num_tokens': '5.806e+05', 'mean_token_accuracy': '0.6572', 'epoch': '1.2'}
+{'loss': '1.461', 'grad_norm': '0.852', 'learning_rate': '1.282e-05', 'entropy': '1.44', 'num_tokens': '6.214e+05', 'mean_token_accuracy': '0.661', 'epoch': '1.28'}
+{'loss': '1.418', 'grad_norm': '0.8303', 'learning_rate': '1.223e-05', 'entropy': '1.38', 'num_tokens': '6.603e+05', 'mean_token_accuracy': '0.6652', 'epoch': '1.36'}
+{'loss': '1.421', 'grad_norm': '0.753', 'learning_rate': '1.163e-05', 'entropy': '1.398', 'num_tokens': '6.991e+05', 'mean_token_accuracy': '0.6642', 'epoch': '1.44'}
+{'loss': '1.309', 'grad_norm': '0.8204', 'learning_rate': '1.104e-05', 'entropy': '1.299', 'num_tokens': '7.37e+05', 'mean_token_accuracy': '0.678', 'epoch': '1.52'}
+{'loss': '1.289', 'grad_norm': '0.9235', 'learning_rate': '1.045e-05', 'entropy': '1.278', 'num_tokens': '7.747e+05', 'mean_token_accuracy': '0.6855', 'epoch': '1.6'}
+{'loss': '1.378', 'grad_norm': '0.8134', 'learning_rate': '9.852e-06', 'entropy': '1.342', 'num_tokens': '8.144e+05', 'mean_token_accuracy': '0.6661', 'epoch': '1.68'}
+{'loss': '1.359', 'grad_norm': '0.783', 'learning_rate': '9.258e-06', 'entropy': '1.326', 'num_tokens': '8.536e+05', 'mean_token_accuracy': '0.6769', 'epoch': '1.76'}
+{'loss': '1.383', 'grad_norm': '0.7267', 'learning_rate': '8.665e-06', 'entropy': '1.341', 'num_tokens': '8.915e+05', 'mean_token_accuracy': '0.6697', 'epoch': '1.84'}
+{'loss': '1.336', 'grad_norm': '0.9165', 'learning_rate': '8.071e-06', 'entropy': '1.283', 'num_tokens': '9.294e+05', 'mean_token_accuracy': '0.6803', 'epoch': '1.92'}
+{'loss': '1.391', 'grad_norm': '0.6866', 'learning_rate': '7.478e-06', 'entropy': '1.339', 'num_tokens': '9.697e+05', 'mean_token_accuracy': '0.6733', 'epoch': '2'}
+{'loss': '1.244', 'grad_norm': '0.9908', 'learning_rate': '6.884e-06', 'entropy': '1.245', 'num_tokens': '1.005e+06', 'mean_token_accuracy': '0.6907', 'epoch': '2.08'}
+{'loss': '1.433', 'grad_norm': '0.7957', 'learning_rate': '6.291e-06', 'entropy': '1.41', 'num_tokens': '1.048e+06', 'mean_token_accuracy': '0.6634', 'epoch': '2.16'}
+{'loss': '1.279', 'grad_norm': '0.8604', 'learning_rate': '5.697e-06', 'entropy': '1.246', 'num_tokens': '1.087e+06', 'mean_token_accuracy': '0.6905', 'epoch': '2.24'}
+{'loss': '1.276', 'grad_norm': '0.8521', 'learning_rate': '5.104e-06', 'entropy': '1.256', 'num_tokens': '1.125e+06', 'mean_token_accuracy': '0.6864', 'epoch': '2.32'}
+{'loss': '1.265', 'grad_norm': '0.8487', 'learning_rate': '4.51e-06', 'entropy': '1.251', 'num_tokens': '1.165e+06', 'mean_token_accuracy': '0.6937', 'epoch': '2.4'}
+{'loss': '1.42', 'grad_norm': '0.8812', 'learning_rate': '3.917e-06', 'entropy': '1.356', 'num_tokens': '1.205e+06', 'mean_token_accuracy': '0.673', 'epoch': '2.48'}
+{'loss': '1.384', 'grad_norm': '1.075', 'learning_rate': '3.323e-06', 'entropy': '1.316', 'num_tokens': '1.244e+06', 'mean_token_accuracy': '0.6726', 'epoch': '2.56'}
+{'loss': '1.306', 'grad_norm': '0.8541', 'learning_rate': '2.73e-06', 'entropy': '1.268', 'num_tokens': '1.282e+06', 'mean_token_accuracy': '0.6836', 'epoch': '2.64'}
+{'loss': '1.318', 'grad_norm': '0.9141', 'learning_rate': '2.136e-06', 'entropy': '1.309', 'num_tokens': '1.32e+06', 'mean_token_accuracy': '0.6738', 'epoch': '2.72'}
+{'loss': '1.283', 'grad_norm': '0.9216', 'learning_rate': '1.543e-06', 'entropy': '1.258', 'num_tokens': '1.36e+06', 'mean_token_accuracy': '0.6821', 'epoch': '2.8'}
+{'loss': '1.427', 'grad_norm': '1.032', 'learning_rate': '9.496e-07', 'entropy': '1.378', 'num_tokens': '1.4e+06', 'mean_token_accuracy': '0.6683', 'epoch': '2.88'}
+{'loss': '1.285', 'grad_norm': '0.9229', 'learning_rate': '3.561e-07', 'entropy': '1.263', 'num_tokens': '1.437e+06', 'mean_token_accuracy': '0.6902', 'epoch': '2.96'}
+{'train_runtime': '6577', 'train_samples_per_second': '0.912', 'train_steps_per_second': '0.057', 'train_loss': '1.434', 'entropy': '1.312', 'num_tokens': '1.455e+06', 'mean_token_accuracy': '0.6773', 'epoch': '3'}
+
+[sft] ✓ 完成 -> phase1/results/week21_synthetic/synthetic50
+[sft] 末步 loss=1.2849746704101563 grad_norm=0.9229398369789124
+
+[04:56:29] merge treatment adapter
+[merge] phase1/results/week21_synthetic/synthetic50 + phase1/results/week12_lora_cpt/50_50_fused -> phase1/results/week21_synthetic/synthetic50_fused
+
+[04:56:35] evaluate fixed CMExam holdout
+[eval] model=phase1/results/week21_synthetic/synthetic50_fused
+[eval] holdout 500 题
+  [8/500] running acc=0.500 unparseable=0
+  [88/500] running acc=0.534 unparseable=0
+  [168/500] running acc=0.482 unparseable=0
+  [248/500] running acc=0.496 unparseable=0
+  [328/500] running acc=0.509 unparseable=0
+  [408/500] running acc=0.525 unparseable=0
+  [488/500] running acc=0.518 unparseable=0
+
+[eval] ✓ accuracy=0.520 (260/500) unparseable=0 (0.0%)
+[eval] → phase1/results/week21_synthetic/synthetic50_fused/cmexam_holdout.json
+
+[05:02:19] write reports (human audit must be reviewed before complete validation)
+[summary] delta=-0.016000000000000014 acceptable=True; reports -> phase1/week21/results
+[ok] code exists: common.py
+[ok] no implementation stub: common.py
+[ok] code exists: prepare_seeds.py
+[ok] no implementation stub: prepare_seeds.py
+[ok] code exists: self_instruct.py
+[ok] no implementation stub: self_instruct.py
+[ok] code exists: evol_instruct.py
+[ok] no implementation stub: evol_instruct.py
+[ok] code exists: assess_quality.py
+[ok] no implementation stub: assess_quality.py
+[ok] code exists: prepare_replacement.py
+[ok] no implementation stub: prepare_replacement.py
+[ok] code exists: merge_adapter.py
+[ok] no implementation stub: merge_adapter.py
+[ok] code exists: summarize_week21.py
+[ok] no implementation stub: summarize_week21.py
+[ok] code exists: apply_audit_labels.py
+[ok] no implementation stub: apply_audit_labels.py
+[ok] code exists: run_week21.sh
+[ok] no implementation stub: run_week21.sh
+[ok] exactly 100 seeds
+[ok] at least 1,000 accepted Self-Instruct records
+[ok] all Self-Instruct evidence uses MLX
+[ok] all Self-Instruct records are valid MCQs
+[ok] at least 250 accepted Evol-Instruct records
+[ok] all Evol-Instruct evidence uses MLX
+[ok] replacement is exactly 1,000 real + 1,000 synthetic
+[ok] replacement IDs are unique
+[ok] valid JSON: quality_metrics.json
+[ok] human audit sample has at least 30 records
+[ok] human audit is fully reviewed
+[ok] quality metrics include reviewed audit
+[ok] treatment adapter exists and is non-trivial
+[ok] valid JSON: cmexam_holdout.json
+[ok] treatment uses the fixed 500-question holdout
+[ok] treatment accuracy exists
+[ok] valid JSON: week21_summary.json
+[ok] replacement decision is measured
+[ok] complete report: week21_synthetic_quality.md
+[ok] complete report: week21_replacement_experiment.md
+[validate] 40 passed, 0 failed

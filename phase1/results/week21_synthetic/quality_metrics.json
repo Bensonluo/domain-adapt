@@ -1,0 +1,77 @@
+{
+  "methodology": {
+    "self_bleu": "dependency-free nearest-neighbour character-bigram Jaccard proxy; lower means more diverse",
+    "correctness": "structural validity and answer-text support are automated proxies; the separate manual review was performed by an AI, not a clinician or human annotator",
+    "distribution": "question length and answer-label Jensen-Shannon divergence"
+  },
+  "counts": {
+    "self": 1000,
+    "evolved": 250,
+    "synthetic_total": 1250,
+    "real_total": 42223,
+    "real_comparison_sample": 5000
+  },
+  "validity": {
+    "synthetic_valid_rate": 1.0,
+    "self_errors": {},
+    "evolved_errors": {},
+    "real_errors": {
+      "explanation_too_short": 7457,
+      "question_too_short": 3117,
+      "option_count": 2,
+      "invalid_answer": 1649,
+      "duplicate_options": 38,
+      "option_keys": 11
+    },
+    "answer_explanation_support_rate": 0.772
+  },
+  "diversity": {
+    "exact_duplicate_count": 0,
+    "exact_duplicate_rate": 0.0,
+    "distinct_1": 0.021984,
+    "distinct_2": 0.131606,
+    "approx_self_bleu": 0.471808
+  },
+  "novelty_vs_real": {
+    "mean_max_3gram_jaccard": 0.087475,
+    "p95_max_3gram_jaccard": 0.14876,
+    "exact_real_match_count": 0
+  },
+  "distribution_shift": {
+    "mean_question_chars_synthetic": 66.079,
+    "mean_question_chars_real": 32.491,
+    "mean_length_ratio": 2.033794,
+    "answer_label_js_divergence": 0.09738,
+    "synthetic_answer_distribution": {
+      "A": 255,
+      "B": 539,
+      "C": 307,
+      "D": 117,
+      "E": 32
+    },
+    "real_answer_distribution": {
+      "A": 938,
+      "B": 1029,
+      "C": 1038,
+      "D": 1069,
+      "E": 926
+    }
+  },
+  "evolution": {
+    "count": 250,
+    "depth_distribution": {
+      "1": 84,
+      "2": 83,
+      "3": 83
+    }
+  },
+  "manual_review": {
+    "path": "phase1/results/week21_synthetic/human_audit.jsonl",
+    "sample_size": 30,
+    "reviewed": 30,
+    "accuracy": 0.833333,
+    "reviewer_kinds": [
+      "ai_nonclinician"
+    ]
+  }
+}
