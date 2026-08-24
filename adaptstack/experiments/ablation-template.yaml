@@ -1,0 +1,15 @@
+# Copy this file and keep one experimental change per variant.
+experiment:
+  name: replace-me
+  baseline_config: configs/medical.yaml
+  hypothesis: Describe the expected causal effect.
+  invariant_controls:
+    - seed
+    - data_snapshot
+    - base_model
+  variants:
+    baseline: {}
+    treatment:
+      training.sft.learning_rate: 0.000005
+  primary_metric: benchmark_accuracy
+  stop_condition: Define an explicit resource or quality threshold.

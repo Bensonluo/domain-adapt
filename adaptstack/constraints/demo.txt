@@ -1,0 +1,3 @@
+# Direct optional dependency audited on 2026-08-24.
+# Re-audit and update this exact version before deploying a public demo.
+gradio==6.24.0

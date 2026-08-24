@@ -1,0 +1,66 @@
+project:
+  name: medical-qwen-pilot
+  domain: medical
+  output_dir: artifacts/runs
+  seed: 123
+
+base_model: Qwen/Qwen2.5-3B
+
+data:
+  corpus_path: data/corpus/medical
+  general_ratio: 0.30
+  clean:
+    min_length: 100
+    dedup_method: minhash
+    dedup_threshold: 0.50
+  sft:
+    target_examples: 50000
+    format: messages
+  preference:
+    target_pairs: 10000
+  synthetic:
+    enabled: true
+    provenance_required: true
+
+training:
+  cpt:
+    enabled: true
+    backend: transformers
+    learning_rate: 0.00002
+    epochs: 1
+  sft:
+    enabled: true
+    backend: trl
+    learning_rate: 0.00001
+    epochs: 2
+  dpo:
+    enabled: false
+    backend: trl
+    beta: 0.10
+  grpo:
+    enabled: true
+    backend: trl
+    reward_functions:
+      - factuality
+      - citation_quality
+      - safety
+  distill:
+    enabled: false
+    backend: transformers
+
+evaluation:
+  enabled: true
+  benchmarks:
+    - medqa
+    - cmb
+  llm_judge:
+    enabled: false
+    rubric_version: v1
+  human_eval:
+    enabled: false
+    required_reviewers: 2
+
+tracking:
+  backend: local
+  project: adaptstack-medical
+  mode: offline
