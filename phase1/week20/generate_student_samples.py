@@ -28,9 +28,9 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 import time
 from pathlib import Path
-from collections import Counter
 
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
@@ -51,6 +51,50 @@ def get_device() -> str:
     if torch.backends.mps.is_available():
         return "mps"
     return "cpu"
+
+
+def compact_valid_samples(path: Path, expected_samples: int) -> set[object]:
+    """Atomically retain one complete record per question for safe resume."""
+    valid: dict[object, dict] = {}
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            qid = row.get("question_id")
+            samples = row.get("samples")
+            if isinstance(qid, bool) or not isinstance(qid, (int, str)):
+                continue
+            if not isinstance(row.get("prompt"), str) or not isinstance(row.get("gold"), str):
+                continue
+            if not isinstance(samples, list) or len(samples) != expected_samples:
+                continue
+            if any(
+                not isinstance(sample, dict)
+                or not isinstance(sample.get("text"), str)
+                or sample.get("letter") not in (None, "A", "B", "C", "D", "E")
+                or not isinstance(sample.get("correct"), bool)
+                for sample in samples
+            ):
+                continue
+            valid[qid] = row
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            for row in valid.values():
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return set(valid)
 
 
 def main():
@@ -87,19 +131,20 @@ def main():
     model.eval()
     print(f"[gen] 加载 student {args.model} ({time.time()-t0:.1f}s)", flush=True)
 
-    rows = [json.loads(l) for l in Path(args.data).read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [
+        json.loads(line)
+        for line in Path(args.data).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     if args.limit and args.limit > 0:
         rows = rows[: args.limit]
 
-    done = set()
-    if args.resume and Path(args.out).exists():
-        for line in Path(args.out).read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                done.add(json.loads(line)["question_id"])
+    output_path = Path(args.out)
+    done = compact_valid_samples(output_path, args.n) if args.resume else set()
     todo = [r for r in rows if r["question_id"] not in done]
     print(f"[gen] 总 {len(rows)} | 已完成 {len(done)} (resume) | todo {len(todo)}", flush=True)
 
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     eos_id = tokenizer.eos_token_id
     pad_id = tokenizer.pad_token_id
 
@@ -109,7 +154,7 @@ def main():
     tot_correct = 0
     t_start = time.time()
 
-    with open(args.out, "a", encoding="utf-8") as fout:
+    with output_path.open("a" if args.resume else "w", encoding="utf-8") as fout:
         for r in todo:
             qid = r["question_id"]
             gold = r.get("gold", "").upper()

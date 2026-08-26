@@ -1,0 +1,9 @@
+{
+  "model": "phase1/results/week21_synthetic/synthetic50_fused",
+  "n": 500,
+  "accuracy": 0.52,
+  "correct": 260,
+  "unparseable": 0,
+  "unparseable_rate": 0.0,
+  "max_new_tokens": 48
+}

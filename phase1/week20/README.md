@@ -91,7 +91,11 @@ Mac 约束:teacher MLX 不能在线产 logprob 给 TRL GKD/DistillationTrainer(�
 | `judge_with_teacher.py` | B | teacher MLX judge 1-5 盲评(resume) |
 | `prepare_onpolicy_data.py` | B | best-of-N → 3 SFT + dpo 数据(单测过) |
 | `run_onpolicy.sh` | B | Part B detached 编排 |
+| `run_cmmlu_eval.py` | 共享 | CMMLU evaluator 包装，合并新旧 arm 指标而不互相覆盖 |
+| `artifact_lineage.py` / `week20_lineage.json` | 共享 | SHA-256 串联 input→adapter→fused→eval，阻止陈旧产物误复用 |
 | `summarize_week20.py` | 共享 | 汇总 → `week20_summary.json` + 大对照表(含 week19/GRPO) |
+| `validate_week20.py` | 共享 | 只读完整性门禁: 唯一 ID、数据规模、checkpoint/eval、summary 对账 |
+| `tests/test_week20.py` | 共享 | KD loss、judge 解析、partial-resume DPO、validator 回归测试 |
 | `distill_feature.py` / `distill_on_policy.py` | — | 入口别名(指向真脚本,清掉旧 `[YOUR CODE]` stub) |
 
 产物根:`phase1/results/week20_distill/{kd_t2,kd_t5,kd_pure,rs_mcq,rs_teacher,rs_both}/`(adapter)+ `{variant}_fused/`(HF)+ `data/` + `week20_summary.json`
@@ -111,7 +115,16 @@ bash phase1/week20/run_onpolicy.sh           # generate → judge → prepare �
 phase1/.venv/bin/python phase1/week20/summarize_week20.py \
     --sweep phase1/results/week20_distill \
     --runs kd_t2 kd_t5 kd_pure rs_mcq rs_teacher rs_both
+
+# 快速验收(不加载模型、不重跑训练)
+phase1/.venv/bin/python phase1/week20/validate_week20.py --scope complete
+phase1/.venv/bin/python -m unittest discover -s phase1/week20/tests -v
 ```
+
+`run_feature.sh` / `run_onpolicy.sh` 会在关键阶段自动调用完整性门禁，任一步失败即
+非零退出，不再打印伪成功。两脚本从自身位置解析仓库根目录；如目录布局不同，可用
+`WEEK20_PYTHON`、`WEEK20_TEACHER_PYTHON`、`WEEK20_TEACHER`、`WEEK20_BASE`、
+`WEEK20_SWEEP`、`WEEK20_LINEAGE` 环境变量覆盖默认路径。
 
 ---
 

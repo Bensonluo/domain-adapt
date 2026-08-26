@@ -1,0 +1,66 @@
+project:
+  name: legal-qwen-pilot
+  domain: legal
+  output_dir: artifacts/runs
+  seed: 321
+
+base_model: Qwen/Qwen2.5-3B
+
+data:
+  corpus_path: data/corpus/legal
+  general_ratio: 0.25
+  clean:
+    min_length: 120
+    dedup_method: minhash
+    dedup_threshold: 0.50
+  sft:
+    target_examples: 40000
+    format: messages
+  preference:
+    target_pairs: 8000
+  synthetic:
+    enabled: true
+    provenance_required: true
+
+training:
+  cpt:
+    enabled: true
+    backend: transformers
+    learning_rate: 0.00002
+    epochs: 1
+  sft:
+    enabled: true
+    backend: trl
+    learning_rate: 0.00001
+    epochs: 2
+  dpo:
+    enabled: true
+    backend: trl
+    beta: 0.10
+  grpo:
+    enabled: false
+    backend: trl
+    reward_functions:
+      - citation_accuracy
+      - legal_reasoning
+      - uncertainty
+  distill:
+    enabled: false
+    backend: transformers
+
+evaluation:
+  enabled: true
+  benchmarks:
+    - legalbench
+    - ceval-law
+  llm_judge:
+    enabled: false
+    rubric_version: v1
+  human_eval:
+    enabled: false
+    required_reviewers: 2
+
+tracking:
+  backend: local
+  project: adaptstack-legal
+  mode: offline

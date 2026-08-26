@@ -28,7 +28,9 @@ Usage:
 
 import argparse
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from collections import Counter
 
@@ -37,6 +39,21 @@ _LEAD = re.compile(r"^\s*[（(]?\s*[A-Ea-e]\b")
 
 def lead_letter(text: str) -> bool:
     return bool(text and _LEAD.match(text))
+
+
+def write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
+    """Replace a JSONL artifact only after its complete content is durable."""
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            for row in rows:
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def main():
@@ -94,8 +111,8 @@ def main():
         sc = s["score"] if s["score"] is not None else -1
         return (sc, s["correct"], s["lead"], -s["len"])
 
-    arm_files = {a: open(out_dir / f"{a}_sft.jsonl", "w", encoding="utf-8") for a in ("rs_mcq", "rs_teacher", "rs_both")}
-    dpo_f = open(out_dir / "dpo_onpolicy.jsonl", "w", encoding="utf-8")
+    arm_rows = {a: [] for a in ("rs_mcq", "rs_teacher", "rs_both")}
+    dpo_rows = []
 
     stats = {a: Counter() for a in ("rs_mcq", "rs_teacher", "rs_both", "dpo")}
     chosen_letters = {a: Counter() for a in ("rs_mcq", "rs_teacher", "rs_both")}
@@ -109,10 +126,10 @@ def main():
             ta = teacher_ans.get(qid, "")
             if not ta:
                 return None
-            arm_files[arm].write(json.dumps({
+            arm_rows[arm].append({
                 "prompt": prompt, "completion": ta, "question_id": qid,
                 "gold": gold, "source": "teacher_fallback",
-            }, ensure_ascii=False) + "\n")
+            })
             stats[arm]["fallback"] += 1
             return ta
 
@@ -120,10 +137,10 @@ def main():
         correct = [s for s in samp if s["correct"]]
         if correct:
             best = sorted(correct, key=mcq_key, reverse=True)[0]
-            arm_files["rs_mcq"].write(json.dumps({
+            arm_rows["rs_mcq"].append({
                 "prompt": prompt, "completion": best["text"], "question_id": qid,
                 "gold": gold, "source": "student",
-            }, ensure_ascii=False) + "\n")
+            })
             stats["rs_mcq"]["student"] += 1
             chosen_letters["rs_mcq"][best["letter"]] += 1
         else:
@@ -133,10 +150,10 @@ def main():
         scored = [s for s in samp if s["score"] is not None]
         if scored:
             best = sorted(scored, key=teacher_key, reverse=True)[0]
-            arm_files["rs_teacher"].write(json.dumps({
+            arm_rows["rs_teacher"].append({
                 "prompt": prompt, "completion": best["text"], "question_id": qid,
                 "gold": gold, "source": "student",
-            }, ensure_ascii=False) + "\n")
+            })
             stats["rs_teacher"]["student"] += 1
             chosen_letters["rs_teacher"][best["letter"]] += 1
         else:
@@ -147,10 +164,10 @@ def main():
             cscored = [s for s in correct if s["score"] is not None]
             pool = cscored if cscored else correct  # 有分数的 correct 优先, 否则 correct 里随意
             best = sorted(pool, key=teacher_key, reverse=True)[0]
-            arm_files["rs_both"].write(json.dumps({
+            arm_rows["rs_both"].append({
                 "prompt": prompt, "completion": best["text"], "question_id": qid,
                 "gold": gold, "source": "student",
-            }, ensure_ascii=False) + "\n")
+            })
             stats["rs_both"]["student"] += 1
             chosen_letters["rs_both"][best["letter"]] += 1
         else:
@@ -158,26 +175,39 @@ def main():
 
         # dpo_onpolicy: chosen (rs_both 逻辑) vs rejected (min score, 错的优先)
         if len(samp) >= 2 and scored:
-            chosen = sorted(pool if (correct and scored) else samp, key=teacher_key, reverse=True)[0] \
-                if (correct and scored) else sorted(scored, key=teacher_key, reverse=True)[0]
+            if correct:
+                correct_scored = [s for s in correct if s["score"] is not None]
+                chosen_pool = correct_scored or correct
+            else:
+                chosen_pool = scored
+            chosen = sorted(chosen_pool, key=teacher_key, reverse=True)[0]
             # rejected: 最低分, 错的优先
             wrong = [s for s in samp if not s["correct"]]
-            rej_pool = [s for s in wrong if s["score"] is not None] if wrong else scored
+            wrong_scored = [s for s in wrong if s["score"] is not None]
+            # Partial judge output can leave every wrong sample unscored.  Fall
+            # back to another scored sample instead of indexing an empty list.
+            rej_pool = wrong_scored or [s for s in scored if s["idx"] != chosen["idx"]]
+            if not rej_pool:
+                stats["dpo"]["skip_nodata"] += 1
+                continue
             rejected = sorted(rej_pool, key=teacher_key)[0]
             if chosen["text"].strip() != rejected["text"].strip():
-                dpo_f.write(json.dumps({
+                dpo_rows.append({
                     "prompt": prompt, "chosen": chosen["text"], "rejected": rejected["text"],
                     "question_id": qid,
                     "chosen_score": chosen["score"], "rejected_score": rejected["score"],
-                }, ensure_ascii=False) + "\n")
+                })
                 stats["dpo"]["pairs"] += 1
             else:
                 stats["dpo"]["skip_same"] += 1
         else:
             stats["dpo"]["skip_nodata"] += 1
 
-    for f in list(arm_files.values()) + [dpo_f]:
-        f.close()
+    # Commit only after every question has been processed successfully. A crash
+    # or malformed input therefore leaves the previous complete datasets intact.
+    for arm, rows in arm_rows.items():
+        write_jsonl_atomic(out_dir / f"{arm}_sft.jsonl", rows)
+    write_jsonl_atomic(out_dir / "dpo_onpolicy.jsonl", dpo_rows)
 
     # report
     print(f"\n[prep] ✓ 数据写入 {out_dir}/", flush=True)

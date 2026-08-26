@@ -31,12 +31,80 @@ Usage:
 
 import argparse
 import json
+import math
 import os
+import tempfile
 import time
 from pathlib import Path
 
 # Apple Silicon Metal 超时禁 (week11 CPT / week19 teacher 同款坑)
 os.environ.setdefault("MTL_TIMEOUT", "0")
+
+
+def compact_valid_logits(
+    path: Path, expected_topk: int, vocab_size: int
+) -> set[object]:
+    """Atomically retain complete, finite records and discard partial resume rows."""
+    valid: dict[object, dict] = {}
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            qid = row.get("question_id")
+            completion = row.get("completion_token_ids")
+            positions = row.get("positions")
+            if isinstance(qid, bool) or not isinstance(qid, (int, str)):
+                continue
+            if type(row.get("prompt_len")) is not int or row["prompt_len"] <= 0:
+                continue
+            if not isinstance(completion, list) or not completion or not isinstance(positions, list):
+                continue
+            if len(completion) != len(positions) or any(
+                type(token) is not int or not 0 <= token < vocab_size for token in completion
+            ):
+                continue
+            complete = True
+            for expected_position, position in enumerate(positions):
+                tokens = position.get("topk_tokens") if isinstance(position, dict) else None
+                logits = position.get("topk_logits") if isinstance(position, dict) else None
+                if (
+                    not isinstance(position, dict)
+                    or position.get("pos") != expected_position
+                    or not isinstance(tokens, list)
+                    or not isinstance(logits, list)
+                    or len(tokens) != expected_topk
+                    or len(logits) != expected_topk
+                    or len(set(tokens)) != expected_topk
+                    or any(type(token) is not int or not 0 <= token < vocab_size for token in tokens)
+                    or any(
+                        isinstance(value, bool)
+                        or not isinstance(value, (int, float))
+                        or not math.isfinite(value)
+                        for value in logits
+                    )
+                ):
+                    complete = False
+                    break
+            if complete:
+                valid[qid] = row
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            for row in valid.values():
+                handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return set(valid)
 
 
 def main():
@@ -58,19 +126,21 @@ def main():
     model, tokenizer = mlx_lm.load(args.teacher)
     print(f"[logits] 加载 teacher {args.teacher} ({time.time()-t0:.1f}s)", flush=True)
 
-    rows = [json.loads(l) for l in Path(args.data).read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [
+        json.loads(line)
+        for line in Path(args.data).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     if args.limit and args.limit > 0:
         rows = rows[: args.limit]
 
-    done = set()
-    if args.resume and Path(args.out).exists():
-        for line in Path(args.out).read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                done.add(json.loads(line)["question_id"])
+    output_path = Path(args.out)
+    vocab_size = len(tokenizer)
+    done = compact_valid_logits(output_path, args.topk, vocab_size) if args.resume else set()
     todo = [r for r in rows if r["question_id"] not in done]
     print(f"[logits] 总 {len(rows)} | 已完成 {len(done)} (resume) | todo {len(todo)}", flush=True)
 
-    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     K = args.topk
     n_done = 0
     n_top1_letter = 0          # sanity: completion 首位 top-1 应是字母
@@ -83,7 +153,7 @@ def main():
     for ch in "ABCDE":
         letter_tokens.update(tokenizer.encode(ch))
 
-    with open(args.out, "a", encoding="utf-8") as fout:
+    with output_path.open("a" if args.resume else "w", encoding="utf-8") as fout:
         for r in todo:
             qid = r["question_id"]
             gold = r.get("gold", "")

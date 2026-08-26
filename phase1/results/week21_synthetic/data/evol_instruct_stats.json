@@ -1,0 +1,13 @@
+{
+  "backend": "mlx",
+  "model": "/Users/luopeng/.lmstudio/models/lmstudio-community/Qwen3-30B-A3B-Instruct-2507-MLX-4bit",
+  "source_count": 250,
+  "accepted": 250,
+  "acceptance_rate": 1.0,
+  "reject_reasons": {
+    "option_keys": 1,
+    "insufficient_stages": 20,
+    "insufficient_evolution": 12
+  },
+  "complete": true
+}

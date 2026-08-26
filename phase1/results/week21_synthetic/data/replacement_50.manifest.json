@@ -1,0 +1,19 @@
+{
+  "n_total": 2000,
+  "n_real": 1000,
+  "n_synthetic": 1000,
+  "synthetic_fraction": 0.5,
+  "seed": 123,
+  "real_sft": "phase1/results/week19_distill/data/real_sft.jsonl",
+  "synthetic_inputs": [
+    "phase1/results/week21_synthetic/data/evol_instruct.jsonl",
+    "phase1/results/week21_synthetic/data/self_instruct.jsonl"
+  ],
+  "holdout": "phase1/data/processed/cmexam/test.jsonl",
+  "rejected_exact_holdout_matches": 0,
+  "unique_replacement_ids": 2000,
+  "synthetic_method_distribution": {
+    "evol_instruct": 250,
+    "self_instruct": 750
+  }
+}

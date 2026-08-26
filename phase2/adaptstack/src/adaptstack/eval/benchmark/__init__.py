@@ -1,0 +1,1 @@
+"""Domain benchmark adapter boundary."""

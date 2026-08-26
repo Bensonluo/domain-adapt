@@ -1,0 +1,24 @@
+{
+  "n_pairs": 500,
+  "control_accuracy": 0.538,
+  "treatment_accuracy": 0.53,
+  "delta": -0.008,
+  "noninferiority_margin": -0.02,
+  "point_estimate_meets_margin": true,
+  "paired_bootstrap": {
+    "samples": 20000,
+    "seed": 123,
+    "confidence_level": 0.95,
+    "delta_interval": [
+      -0.034,
+      0.018
+    ],
+    "noninferiority_established": false
+  },
+  "mcnemar_exact": {
+    "control_only_correct": 23,
+    "treatment_only_correct": 19,
+    "discordant": 42,
+    "two_sided_p": 0.6439689563703723
+  }
+}
