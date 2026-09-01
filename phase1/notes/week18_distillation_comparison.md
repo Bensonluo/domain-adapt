@@ -124,8 +124,8 @@
 深度: 深 —— 学策略 (policy-level)
 
 优点:
-  + 效果最好 (能探索 teacher 没示范的路径)
-  + 可以超越 teacher (R1 在数学上超越 GPT-4 示范)
+  + 可能改善 student 自身分布上的策略
+  + 在合适 reward、探索与迭代下有机会发现 teacher 未示范的路径
   + 适合 reasoning (探索性强)
 
 缺点:
@@ -146,7 +146,7 @@
 | **需要 teacher 权重?** | ❌ 只需 API | ✅ 需白盒 hidden | △ 需 reward 函数 |
 | **成本** | 低（API 费） | 中（需访问权重） | 高（多轮迭代） |
 | **深度** | 浅 | 中 | 深 |
-| **能超越 teacher?** | ❌ 不能 | ❌ 不能 | ✅ 能（探索） |
+| **能超越 teacher?** | 不保证 | 不保证 | 有可能，但取决于 reward、探索和验证 |
 | **典型 loss** | 交叉熵 (SFT) | MSE/cosine on hidden | DPO/PPO + reward |
 | **适用阶段** | SFT / 对齐 | 预训练压缩 | RL / reasoning |
 | **适合任务** | 对话/写作/通用 | 模型压缩部署 | 数学/代码/reasoning |
@@ -178,7 +178,7 @@
 └─ 「我要让模型获得 reasoning 能力(数学/代码)」
     └─ On-policy distillation (R1 范式)
         student 采样 → 规则 reward → rejection sampling → SFT
-        能超越 teacher, 但最贵
+        可能发现示范外策略；是否超过 teacher 需独立验证，成本通常较高
 ```
 
 **实战速记**（对应我的垂域项目）：
@@ -233,7 +233,7 @@
   Response distillation:
     - 数据来源: teacher 模型生成 (Self-Instruct 自举 / teacher 直接答)
     - 学的是: teacher 的"输出分布"(不只 hard label, 还可拿 soft label)
-    - 天花板: teacher 的能力 (但数据可以无限造、便宜)
+    - 天花板与 teacher、生成策略和验证质量相关；数据可扩展但并非无限或无成本
 
 一句话:
   Response distillation = 用 teacher 输出替代人工标注的 SFT。
@@ -241,7 +241,7 @@
   于是成本骤降、规模可放大、多样性可控。
 
 进阶区别 (带 soft label 时):
-  纯 SFT 学 hard label (one-hot), 1 bit 信息;
+  纯 SFT 学 hard target；其信息量取决于词表、序列和条件分布，不是固定 1 bit；
   Response distillation 可以学 teacher 的 soft label (logits 分布),
   携带"类间关系"的 dark knowledge, 比人工标注信息量大。
   (这是 DistilBERT L_ce 和普通 SFT 的本质差异)
@@ -285,19 +285,18 @@ DistilBERT 的特例 (为什么它不用 projection):
   要同时砍层数 + 砍宽度 → 维度不同 → 必须加 projection
 ```
 
-### Q3: On-policy distillation 为什么效果最好但最贵？
+### Q3: On-policy distillation 为什么可能更有效、但通常更贵？
 
 ```
-为什么效果最好:
+为什么可能更有效:
 
   Response/Feature: student 学 teacher 的"固定输出/表示" (off-policy)
-    → student 只能模仿, 探索空间被 teacher 限定
-    → 无法超越 teacher, 也无法发现 teacher 没示范的好策略
+    → student 主要模仿 teacher 给出的分布，探索范围受示范数据约束
 
   On-policy: student 在"自己的分布"上生成, teacher/reward 只给反馈
     → student 探索的是"自己能到达的状态空间"
-    → 能发现 teacher 没教过的好路径 (R1 的 aha moment 就是这么来的)
-    → 本质是 RL, 有探索性, 所以能超越 teacher
+    → 可能发现 teacher 没示范的路径
+    → 若结合可用 reward 与迭代优化，可能产生超出示范的策略；不保证超过 teacher
 
   类比:
     off-policy = 徒弟照师傅的菜谱做 (只能复刻)

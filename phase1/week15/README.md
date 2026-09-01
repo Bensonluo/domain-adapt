@@ -1,5 +1,7 @@
 # Week 15：DPO 实验（对齐强度 vs 通用遗忘的 β trade-off）
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。beta=0.1 仅是 n=13 matched bucket 上的点估计候选，“最优 beta”声明已撤回。
+
 > 目标：在 week12 CPT baseline（`50_50_fused`，domain gain +0.043、通用无遗忘）上跑 **DPO**，
 > 扫 β ∈ {0.1, 0.3, 0.5}，回答「对齐强度 vs 通用遗忘的 trade-off 最优点」，产出 DPO 模型 + 偏好胜率 + reward margin。
 >
@@ -22,7 +24,8 @@
 ## 数据
 
 - 源：`phase1/data/processed/preference/train.jsonl`（1399 对，TRL 原生 `{prompt,chosen,rejected}`）
-- 切分（`prep_data.py`，seed 123，幂等）：`train_split.jsonl`（1299）+ `holdout.jsonl`（100，胜率评估用，不进训练）
+- 历史切分（`prep_data.py`）：`train_split.jsonl`（1299）+ `holdout.jsonl`（100）。2026-08-28 审计发现 **50 个 normalized prompt 组跨 split**，只保留用于历史复现。
+- 新 grouped v1：`train_grouped_v1.jsonl`（1299）+ `dev_grouped_v1.jsonl`（100），按 source + NFKC/casefold/whitespace-normalized prompt 分组，prompt overlap=0。由 `phase1/audit/build_preference_grouped_split.py` 生成。
 - β-sweep：每 β 取前 300 对（`--limit 300`）先定 β 方向；胜出者后续可全量重训
 
 ---
@@ -77,8 +80,8 @@ sum-WR 在 mid/skewed 两档**全部 ≈ 0**（chosen 更长 → Σlogp 必输�
 
 ### 解读（不美化）
 
-**① 没有灾难性遗忘——主安全检查通过 ✅**
-medical_cn Δ 全在 −0.003~−0.006（week12 LoRA-CPT 噪声 ±0.04，这是噪声内），general_cn Δ 全 +0.005。DPO 打在 CPT baseline 上**没有重蹈 week12 全量 FT 的覆辙**（那次 medical −0.20、遗忘 +42%）。这是本轮最确定的正面结论。
+**① 当前 development 子集未观察到明显下降（方向性安全信号）**
+medical_cn Δ 全在 −0.003~−0.006，general_cn Δ 全 +0.005。这些是单 seed、小评测集上的点估计，只能说明当前 run 没有重现 week12 旧 run 的大幅下降；不能据此证明不存在灾难性遗忘。
 
 **② CMMLU 几乎不动——符合预期，不是失败**
 DPO 优化的是「偏好」（chosen vs rejected 整段回答），不是事实知识。CMMLU 是 4 选 1 事实召回，DPO 本就不该动它。三个 β 在 CMMLU 上不可区分 = 正常。
@@ -91,7 +94,7 @@ week14 发现 chosen 更长 93.5% → 本周实测：sum-WR 全 ≈ 0（chosen �
 
 ### 选优（弱信号，诚实标注）
 
-按预设门槛（medical_cn Δ ≥ −0.02 全过）+ matched-bucket mean-WR 排序，脚本选 **β=0.1**（0.231 > 0.154）。但这是 13 对上的 3/13 vs 2/13，**纯噪声**。三 β 在 holdout 不可区分，「最优 β」无统计意义。
+按预设门槛（medical_cn Δ ≥ −0.02 全过）+ matched-bucket mean-WR 排序，脚本把 **β=0.1**（0.231 > 0.154）列为后续候选。但这是 13 对上的 3/13 vs 2/13，**纯噪声**。三 β 在 holdout 不可区分；原“最优 β”声明撤回。
 
 ### → week16 行动项（本轮负结果直接驱动）
 
@@ -108,7 +111,7 @@ week14 发现 chosen 更长 93.5% → 本周实测：sum-WR 全 ≈ 0（chosen �
 |------|------|
 | [`run_dpo_eval.py`](run_dpo_eval.py) | PEFT `merge_and_unload` → HF-route CMMLU（`run_hf_evaluate` = HFLM+MPS，复用 `_eval_core` 的 TASK_GROUPS/cmmlu 本地 patch/score 解析）；base + 3 DPO 同 backend → delta 有效 |
 | [`eval_winrate.py`](eval_winrate.py) | holdout 100 对胜率（sum-logp + mean-logp 双口径）+ 长度分桶（matched/mid/skewed） |
-| [`summarize_dpo.py`](summarize_dpo.py) | 汇总表 + 选最优 β（门槛：medical_cn Δ ≥ −0.02；排序：matched-bucket mean-logp WR） |
+| [`summarize_dpo.py`](summarize_dpo.py) | 汇总表 + 按点估计列出后续 β 候选（不代表统计最优） |
 
 任务组（复用 week12）：medical_cn（8 医学子集，领域保留）+ general_cn（4 非医学子集，通用遗忘）。limit=100，0-shot，seed 123。
 
@@ -123,7 +126,7 @@ week14 发现 chosen 更长 93.5% → 本周实测：sum-WR 全 ≈ 0（chosen �
 - [x] 3 个 β 训练完成（reward margin chosen>rejected，acc=1.0；drift 0.1>0.3>0.5 符合理论）
 - [x] merge + CMMLU 评估（medical_cn Δ ≈ −0.005 噪声内 = 没崩；general_cn Δ +0.005 = 无遗忘）
 - [x] holdout 胜率 + 长度分桶（**胜率几乎没涨 = 过拟合**；长度偏差主导 sum-WR≈0）
-- [x] 选最优 β（β=0.1，但**弱信号**：三 β holdout 不可区分，详见解读）
+- [x] 按点估计选择后续候选 β=0.1；三 β holdout 不可区分，“最优”未验证
 
 ---
 
@@ -131,4 +134,4 @@ week14 发现 chosen 更长 93.5% → 本周实测：sum-WR 全 ≈ 0（chosen �
 
 - **week16**：IPO / length-normalized DPO（`loss_type="ipo"`，直接攻 93.5% 长度偏差）+ `--noise` 失败模式系统实验（钩子已埋）
 - **week17**：GRPO（on-policy，独立栈；`beta=0` 不加载 ref，KL 用 k3 estimator）
-- 最优 β 的 `beta_*_fused` 作为 week16/17 的对齐起点
+- 候选 β 的 `beta_*_fused` 可作为 week16/17 的探索起点

@@ -1,9 +1,11 @@
 # Week 13：DPO + GRPO 理论 + 数学推导
 
+> 实现边界纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。理论公式与本项目后续具体框架配置分开验收。
+
 > 目标: 深度理解 DPO/GRPO 的数学原理，精读 5 篇论文，手推 DPO loss。
 > 预计时间: 14-20 小时
 
-> **上周回顾**: Week 12 你跑完了 CPT 的数据混合 ablation，找到了最优比例。CPT 解决的是"让模型理解领域语言"的问题。这周开始解决"让模型的输出符合人类偏好"的问题。
+> **上周回顾**: Week 12 跑完了 CPT 数据混合探索，并选择 50-50 作为后续操作性基线；尚未证明它是最优比例。CPT 旨在调整领域分布建模，这周开始研究偏好对齐。
 >
 > **思考锚点**: "DPO 为什么能绕过 reward model？GRPO 为什么不需要 reference model？它们各自省掉了什么？"
 
@@ -61,7 +63,7 @@
 2. **GRPO 和 DPO 在是否需要 reference model 上的差异是什么？为什么？**
 3. **Reward hacking 是什么？在 GRPO 中怎么检测？**
 
-> 答案: 1) 通过 Bradley-Terry 模型，将偏好概率表示为 reward 差的 sigmoid，然后用 implicit reward r(x,y) = β log(π/π_ref) + β log Z(x) 代入 r(x,yw) − r(x,yl)，两个 y 共享同一个 x，Z(x) 一加一减抵消。2) **两者都有 reference model**（常见误解是 GRPO 没有）。差异在角色：DPO 以 logprob 比值**隐式**进 loss；GRPO 以独立 KL 项**显式**进 loss。GRPO 砍掉的是 **value/critic 网络**（用 group baseline 代替），不是 reference model。3) Reward hacking = reward 分数上升但实际质量下降。检测：holdout 人工抽样（reward↑ 但人工分↓ = hacking）、多 RM 交叉验证、监控 KL 飙升；根治用可验证的规则 reward（R1 做法）。
+> 答案: 1) 通过 Bradley-Terry 模型，将偏好概率表示为 reward 差的 sigmoid，然后用 implicit reward r(x,y) = β log(π/π_ref) + β log Z(x) 代入 reward 差，两个 y 共享同一个 x，Z(x) 抵消。2) DPO 依赖 reference policy 的 logprob 比值；GRPO 常用 reference KL，但具体实现可在 `beta=0` 时不加载 reference（本项目 Week 17 即如此）。GRPO 的关键简化是用 group baseline 取代 value/critic。3) Reward hacking 是优化代理指标却损害真实目标；可用独立 outcome、盲评和对抗 probes 检测。可验证规则 reward 能降低风险，但不能保证根治所有形式的 hacking。
 
 ---
 

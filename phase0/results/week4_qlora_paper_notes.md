@@ -6,9 +6,9 @@
 QLoRA = 量化基座 (NF4) + LoRA 适配器 (BF16)
 ```
 
-基座模型用 4bit 存储，LoRA 适配器保持 16bit 精度训练。效果和 16bit 全量微调几乎一样，显存降到 1/4。
+基座模型以 4bit 量化形式保存，计算时按配置反量化到计算 dtype，梯度只更新 LoRA 参数。显存收益与模型、序列长度、batch、checkpointing 和实现共同相关，不能固定概括为“1/4”。
 
-论文的 claim：**在 48GB 显存上微调 65B 模型，效果不输全量微调。**
+论文展示了在单张 48GB GPU 上对 65B 模型进行 QLoRA 微调，并在其选定的数据与评估上取得有竞争力的结果；这不等于已经证明 33B/65B 在所有任务上与同条件 16-bit full FT 等价。
 
 ## 2. NF4 — 4-bit Normal Float
 
@@ -18,8 +18,7 @@ QLoRA = 量化基座 (NF4) + LoRA 适配器 (BF16)
 INT4 均匀量化:  16 个等距区间 [-8, -7, ..., 7]
 LLM 权重分布:   近似正态分布 N(0, σ²)，大部分值集中在 0 附近
 
-INT4 的问题:    大权重和小权重用同样大的区间 → 小权重精度差
-                但 LLM 90%+ 的权重都在 [-2σ, 2σ] 范围内
+INT4 的问题:    大权重和小权重用同样大的区间 → 对近零高密度区域的表示效率较低
 ```
 
 **NF4 的做法：**
@@ -64,12 +63,11 @@ Double Quantization:
       某些步骤（gradient checkpointing 重新计算时）显存会突增
       显存峰值 → OOM
 
-解决: 把优化器状态放在 CPU 内存（便宜）
-      需要时用统一内存自动 paging 到 GPU
-      NVIDIA 统一内存: CPU/GPU 共享地址空间，自动换页
+解决: 使用 NVIDIA unified memory，在内存压力出现时让优化器状态分页到 CPU，
+      需要时再传回 GPU；这不是“优化器状态始终全部放在 CPU”。
 ```
 
-实际效果：65B 模型训练时峰值显存从 ~48GB 降到 ~48GB 但不再 OOM（消除了尖峰）。
+作用边界：降低偶发显存峰值导致 OOM 的风险；具体峰值和传输开销必须由运行日志测量，不能从方法描述推导固定数字。
 
 ## 5. 数据流：QLoRA 训练的一步
 
@@ -78,24 +76,14 @@ Double Quantization:
 2. Forward: y = W_dequant @ x + (α/r) × B @ A @ x
 3. 计算 loss，反向传播
 4. 梯度只更新 LoRA 的 A 和 B（BF16），基座权重不动
-5. A/B 的 Adam 优化器状态存在 CPU (Paged Optimizer)
+5. A/B 的优化器状态可在显存压力下由 paged optimizer 借助统一内存分页
 ```
 
-关键：反量化是临时操作，不常驻显存。每个 batch 只在 forward 时按需反量化。
+关键：冻结的量化权重不接收梯度；反量化与矩阵乘的具体 buffer 生命周期依赖 bitsandbytes/kernel 实现，不能仅凭概念图断言峰值显存。
 
-## 6. QLoRA vs 16-bit 全量微调（论文 Figure 1）
+## 6. QLoRA 与 16-bit 训练的证据边界
 
-```
-实验: LLaMA 65B, GSM8K (数学推理), MMLU (多任务)
-
-| 方法              | 可训练参数 | 显存  | MMLU  | GSM8K |
-|-------------------|-----------|-------|-------|-------|
-| 16-bit 全量微调   | 65B       | ~780GB| 基准  | 基准  |
-| 16-bit LoRA       | ~20M      | ~260GB| -0.1% | -0.3% |
-| QLoRA (NF4)       | ~20M      | ~48GB | -0.0% | -0.2% |
-
-结论: QLoRA 和 16-bit 全量微调效果几乎无差别，但显存是 1/16
-```
+此前把一组 65B/MMLU/GSM8K 数字标成“论文 Figure 1”，没有可核验来源，现已撤回。Figure 1 不能支撑“QLoRA 普遍等同 16-bit full FT、显存固定为 1/16”的结论。正式比较必须固定基座、数据、训练预算、评估集和 seed，并分别报告模型权重、激活、梯度、优化器和峰值显存。
 
 ## 7. 三大创新的关系
 
@@ -104,10 +92,10 @@ NF4                 → 基座模型从 16bit 压到 4bit（省 3/4 显存）
 Double Quantization → 量化常数的额外开销再砍 75%
 Paged Optimizer     → 优化器状态卸到 CPU，消除显存峰值
 
-三者叠加: 让 65B 模型在 48GB 显存上可训练
+三者叠加使论文中的 65B/48GB 训练设置成为可能；可迁移性仍取决于实现和训练配置。
 ```
 
-## 8. 你实际用 QLoRA 时的配置
+## 8. 候选起始配置（不是已验证最优值）
 
 ```python
 from transformers import BitsAndBytesConfig
@@ -123,9 +111,9 @@ bnb_config = BitsAndBytesConfig(
 
 # LoRA 配置
 lora_config = LoraConfig(
-    r=8,                                  # rank
-    lora_alpha=16,                        # alpha = 2 × rank
-    target_modules=["q_proj", "v_proj"],  # 只适配 q 和 v
+    r=8,                                  # 候选 rank，需消融
+    lora_alpha=16,                        # 候选 alpha，需与 rank/LR 联合检查
+    target_modules=["q_proj", "v_proj"],  # 候选模块集合，需按任务比较
     lora_dropout=0.05,
     task_type="CAUSAL_LM",
 )
@@ -133,5 +121,5 @@ lora_config = LoraConfig(
 # 加载模型
 model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-7B", quantization_config=bnb_config)
 model = get_peft_model(model, lora_config)
-# 可训练参数: ~4M (7B 的 0.06%)
+# 精确可训练参数量应以 model.print_trainable_parameters() 的实际输出为准
 ```

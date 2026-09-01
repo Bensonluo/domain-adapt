@@ -1,8 +1,12 @@
 # Week17：GRPO 实战（MCQ 答对率 reward，on-policy RL 落地）
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。+2.2pp 为单 seed 的 development-set 点估计；当前只排除了已检查的解析/格式型 hacking。
+>
+> **2026-08-28 数据审计更新**：500 题中有 8 题与实际 GRPO 8K train 重叠。该 +2.2pp 不能再作为“真实迁移”证据，只保留为受污染的历史结果。
+
 > 目标：把 GRPO stub 填成能跑的 on-policy RL，产出 **GRPO vs DPO 对比** + reward hacking 诊断。
 >
-> **思考锚点**："reward 上升但质量真的变好了吗？怎么区分真实提升和 reward hacking？" —— 本周用**客观 MCQ 答对率**reward，让这个问题几乎自动回答（答对就是答对，hacking 几乎不可能）。
+> **思考锚点**："reward 上升但质量真的变好了吗？怎么区分真实提升和 reward hacking？" —— 本周用**客观 MCQ 答对率**降低主观 reward 风险，但仍需检查格式投机、标签先验、解释质量和未覆盖行为。
 
 ---
 
@@ -10,7 +14,7 @@
 
 | 决策 | 选择 | 依据 |
 |---|---|---|
-| reward | **MCQ 答对率**（用户决策） | 开放式医疗 reward 区分度弱（G 个 completion 格式近似→advantage≈0→学不动）且易 hacking；MCQ 客观、区分度天然、hacking 几乎不可能 |
+| reward | **MCQ 答对率**（用户决策） | 开放式 reward 区分度和验证成本更高；MCQ reward 客观且易解析，但仍可能受格式、标签先验和任务窄化影响 |
 | base | [`50_50_fused`](../results/week12_lora_cpt/50_50_fused)（**非 stub 过时的 week11_cpt_pure**） | 与 DPO（week15/16）同口径，delta 可比 |
 | 数据 | **CMExam**（[`fzkuji/CMExam`](https://huggingface.co/datasets/fzkuji/CMExam)，68K 简体医学选择题）→ 8K train + 500 holdout（test split，全程未训） | 小数据 hf-mirror 可下；纯简体；客观答案可校验 |
 | loss | **`dapo`**（TRL v1.8.0 默认） | 自带长度偏差消除（呼应 week16 IPO）；源码 grpo_trainer.py L2949 |
@@ -73,7 +77,7 @@ learncheck（50 步）`lr=1e-6`：`grad_norm≈1.2` 健康、advantage 正确（
 | GRPO | 0.5687 | 0.6725 |
 | **Δ** | **+0.0024** | **+0.005** |
 
-**全在 week12 LoRA 噪声带（±0.04）内 → 无灾难遗忘**（且略正）。GRPO 对齐 MCQ 格式没给医疗知识加成（意料中），但也没破坏。
+**全在本项目经验波动带（±0.04）内，当前 development 子集未观察到明显下降**。这不证明未测能力没有退化。
 
 （汇总 [`grpo_summary.json`](../results/week17_grpo/grpo_summary.json)，原始 loss_log / run_config / scores 在 [`phase1/results/week17_grpo/`](../results/week17_grpo/)）
 
@@ -91,10 +95,10 @@ DPO（week15/16）和 GRPO 优化的是**不同信号**，不能压成单一指�
 | **机制** | 离线对比（无 generation） | on-policy generation + group baseline |
 | **遗忘** | medical Δ −0.006（week15 β=0.3） | medical Δ **+0.002**（略正） |
 | **holdout 泛化** | meanWR 0.29（β=0.3）/ 0.45（ipo，带目标泄漏 caveat） | 答对率 +2.2pp（无 caveat，客观） |
-| **主要风险** | 长度偏差（week16 三大发现之一） | reward hacking（MCQ 客观 → 几乎不可能，本周 unparseable=0 证实） |
+| **主要风险** | 长度偏差（week16 三大发现之一） | reward hacking（本周只检查了解析/格式型风险；unparseable=0） |
 | **beta/KL 作用** | β 是核心（week16 极端 β 不对称） | beta=0 默认不加载 ref（group baseline 是锚） |
 
-**判定（诚实）**：GRPO 在**信号干净度**上明显胜出（客观 reward → 无长度偏差、无目标泄漏、holdout 增益可信）；在**绝对增益幅度**上 modest（+2.2pp）——MCQ 答对率 reward 的天花板是模型**已有知识**，RL 能 sharpen 选择但不能凭空加知识。DPO 的 holdout 信号被长度偏差/目标泄漏污染，不可直接比大小，但其**偏好对齐**目标与 GRPO 的**答案正确性**目标本就不同。
+**当前判定**：训练 reward 上升说明优化链路工作，但 development 点估计 +2.2pp 受直接题目泄漏污染（8/500 与 GRPO train 重叠），不能作为迁移证据或用于判定优于 DPO。两者训练目标也不同，绝对增益不可直接比较。
 
 ---
 
@@ -103,7 +107,7 @@ DPO（week15/16）和 GRPO 优化的是**不同信号**，不能压成单一指�
 - [x] GRPO 训练跑通（TRL+MPS+PEFT，smoke 风闸 + 1500 步正式跑）
 - [x] Domain-specific reward function（MCQ 答对率，正确签名，10 单测过）
 - [x] GRPO vs DPO 完整对比（结构性 8 轴表）
-- [x] reward hacking 诊断：**未出现**（客观 reward + unparseable=0 + holdout↑ + 无遗忘 = 真提升）
+- [x] reward hacking 初步诊断：未观察到解析失败型或显式格式 hacking；其他行为风险尚未排除
 - [x] ≥1 个人 insight：**「loss≈0 ≠ 不学习」**（dapo 归一化假象 vs policy gradient 非零梯度的区分）+ **「MCQ reward 天花板=模型知识」**（RL sharpen 选择不增知识）+ **「DPO 先例对 GRPO 不成立」**（generation rollout 路径才触发 MPS corruption）
 - [x] CMExam 数据闭环（68K 下载 → 8K/500 切分 → train → holdout 客观 eval）
 

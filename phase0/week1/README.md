@@ -2,6 +2,8 @@
 
 > 目标: 理解 autograd,手写 multi-head attention,组装完整 Transformer Block,跑通训练循环。
 > 预计时间: 14-20 小时。
+>
+> **审查状态**：`PARTIAL`。代码和部分运行产物存在，行为验收与 lm-eval 基线未闭环。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **为什么学这周**: Autograd 是所有深度学习的基石 — 不知道梯度怎么算就无法理解训练为什么能工作。Attention 是 Transformer 的核心,也是你未来做 LoRA/蒸馏/RLHF 时最常打交道的模块。这两者不理解,后面所有东西都是空中楼阁。
 >

@@ -74,14 +74,20 @@ def main():
             out = model.generate(**enc, max_new_tokens=args.max_new_tokens,
                                  do_sample=False, pad_token_id=tok.eos_token_id)
             gen = tok.batch_decode(out[:, enc.input_ids.shape[1]:], skip_special_tokens=True)
-            for prompt, gold, text in zip(prompts, golds, gen):
+            for batch_offset, (prompt, gold, text) in enumerate(zip(prompts, golds, gen)):
                 pred = extract_answer(text)
                 ok = pred is not None and pred == gold
                 if ok:
                     correct += 1
                 if pred is None:
                     unparseable += 1
-                preds.append({"gold": gold, "pred": pred, "gen_head": text[:60]})
+                preds.append({
+                    "index": i + batch_offset,
+                    "gold": gold,
+                    "pred": pred,
+                    "correct": ok,
+                    "gen_head": text[:120],
+                })
             if (i // args.batch_size) % 10 == 0:
                 acc = correct / (i + len(batch))
                 print(f"  [{i+len(batch)}/{len(rows)}] running acc={acc:.3f} unparseable={unparseable}")
@@ -95,9 +101,9 @@ def main():
     }
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     Path(args.output).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    # 抽样预测落盘 (供人工 sanity)
+    # 全量逐题预测是配对统计、泄漏剔除和失败分析所需的证据，不得只保留样本。
     Path(args.output + ".preds.jsonl").write_text(
-        "\n".join(json.dumps(p, ensure_ascii=False) for p in preds[:50]), encoding="utf-8")
+        "".join(json.dumps(p, ensure_ascii=False) + "\n" for p in preds), encoding="utf-8")
     print(f"\n[eval] ✓ accuracy={acc:.3f} ({correct}/{n}) unparseable={unparseable} ({unparseable/n:.1%})")
     print(f"[eval] → {args.output}")
 

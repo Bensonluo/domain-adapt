@@ -1,5 +1,7 @@
 # Week 20: 蒸馏深度大专题 — Feature(Logit KD)+ On-Policy 双主线
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。本周实际覆盖 logit-level KD 与一轮 student-sampled rejection-sampling SFT；单 seed 多臂 winner 不构成普适机制结论。
+
 > **Phase1 最关键一段**。用户原话:「logit KD 也要做深,on-policy 也要,全部都要,缺什么补什么,不允许任何马虎、敷衍、偷懒」。
 >
 > 两个核心问题(week18 思考锚,本周干净回答):
@@ -31,7 +33,7 @@
 
 传统 feature distill = 中间层 hidden state 对齐(DistilBERT + projection)。但**跨框架(MLX teacher + HF student)hidden state 不可行**:mlx.Tensor vs torch.Tensor、层命名/维度对齐复杂、跨框架 projection 不可导。
 
-**现代生成式 LLM 的 feature distill 等价 = logit-level KD**(Hinton KD on token logits):学 teacher 每个 token 位置的**完整 soft 概率分布**,而非只 argmax(hard label = week19 distill 臂)。soft label 携带「类间关系」的 dark knowledge。结构性 insight:跨框架约束下,LLM feature distill 退化为 logit KD。
+**本项目在跨框架约束下选择 logit-level KD**（Hinton KD on token logits）：学习 teacher 每个 token 位置的 soft 概率分布，而非只学习 argmax/hard target。它是本轮可行的蒸馏实现，不等价于全部 hidden-state feature distillation。
 
 ### KD loss(`kd_loss.py`,5 单测过)
 
@@ -57,7 +59,7 @@ L = α · CE(student, gold_token) + (1−α) · T² · KL_restricted(teacher_top
 
 ### 设计
 
-on-policy = student 在**自己分布**上生成 → 外部信号(teacher judge / rule reward)筛选 → 再学习。week18 理论:效果最好(student 探索自己分布,能发现 teacher 没示范的好路径,**能超 teacher** — R1 aha moment)但最贵。
+本周所谓 on-policy 路线具体是：student 在**自己分布**上生成 → 外部信号（teacher judge / rule reward）筛选 → 一轮 rejection-sampling SFT。它可能改善 student 分布匹配，但不等同于完整 RL/GKD，也不保证优于或超过 teacher。
 
 Mac 约束:teacher MLX 不能在线产 logprob 给 TRL GKD/DistillationTrainer(后者 VLLMClient 绑 vLLM + 偏 on-policy generation)。故走 **rejection-sampling SFT(STaR / best-of-N)+ 可选 on-policy DPO**(industry standard,复用 MLX teacher judge + week17 reward + week15/16 SFT/DPO 栈,不依赖 vLLM)。
 
@@ -149,25 +151,25 @@ phase1/.venv/bin/python -m unittest discover -s phase1/week20/tests -v
 
 ### Part A 结构性 insight(数据定稿)
 
-1. **★ soft label 保知识,hard label 毁知识**(回答 week18 锚问「soft logit vs hard argmax 差距在哪」):week19 real(hard CE on gold)把 CMMLU 医学砸 **−0.025**(0.5663→0.5413);三臂 KD(soft KL)医学 Δ 全在 ±0.004 内,知识守住。**dark knowledge 验证**:teacher soft 分布携带类间关系,argmax 压成单 token → 在 teacher top1≠gold 的 ~11% 位置(train acc 0.892)CE 把 student 拉离正确次优,砸了广度知识。KD 三臂医学 Δ ≈ 0 是该现象最干净的对照。
+1. **★ soft-KL 臂呈现更稳定的方向性信号**：week19 real(hard CE on gold)在当前 CMMLU 医学 dev 上为 **−0.025**，三臂 KD 为 ±0.004。由于数据目标、训练条件和 seed 未形成严格因果对照，这支持“soft targets 可能减少附带退化”的假设，但尚未验证“soft 保知识、hard 毁知识”这一普适机制。
 
-2. **★ α=0 纯 KL 最佳,hard CE 是拖累**:kd_pure(完全不学 gold)CMExam **0.544(+0.032)全臂最高**,超 week19 real(+0.024)+ GRPO(+0.022);通识 0.6875(+0.020)也最高,医学守住(+0.001)。α=0.5 两臂 CMExam 只 +0.012/+0.016。解释:teacher(30B)比单 gold 答案更博学,teacher top1≠gold 时 CE 与 KL 打架;α=0 让 student 干净学 teacher 全分布,信 teacher 全分布 > 信单 gold。→ **强 teacher 蒸馏:丢掉 hard CE,纯 soft KL 够且更好。**
+2. **★ `kd_pure` 是当前 development set 的点估计 winner**：CMExam **0.544(+0.032)**、通识 0.6875(+0.020)、医学 +0.001。这个结果可用于选择确认实验候选，但单 seed、多臂比较存在 winner's curse；在严格同数据/token budget、多 seed 确认前，不给出“应丢掉 hard CE”的一般建议。
 
-3. **温度次要,主轴是 α**:T2 vs T5 在 α=0.5 下互有胜负(CMExam T5 +0.016 略高,但医学 T5 −0.004 vs T2 +0.002、通识 T5 +0.010 vs T2 +0.018)。T∈[2,5] 影响小,经典 Hinton T=2 最稳;真正分水岭是 hard CE 开关(α),不是温度。
+3. **当前 sweep 中 alpha 信号大于温度信号**：T2 vs T5 在 α=0.5 下互有胜负，而 α=0 的点估计更高。由于没有 seed 重复，不能确认温度次要或 alpha 是稳定主轴。
 
 ### Part B 结构性 insight(数据定稿)
 
 1. **★ on-policy 没超 off-policy,但分工互补;单轮 STaR 超不了 teacher**(回答「on vs off 差距」+「能否超 teacher 0.865」):任务(CMExam)off-policy **kd_pure +0.032 全臂最高**,on-policy 三臂仅 +0.012/+0.006/−0.002 —— **单轮 best-of-N STaR 打不过学 teacher 全分布的 logit KD**。但 on-policy **rs_both 医学 0.5787(+0.012)全臂最高**(超 kd_pure 0.5675 / GRPO 0.5687 / real 0.5413):学 student 自己答对的医学推理,比学 teacher soft 分布更直接强化 domain 知识。**超 teacher 0.865?不能** —— 全部 rs_* 0.51-0.52,best-of-N 上限 = coverage 0.79(temp 0.8),oracle 都到不了 teacher;R1 式「超 teacher」要迭代自举 + 大 N + 真 RL,单轮 STaR 不具备。
 
-2. **★ teacher judge 是 proxy reward,任务上反噬**(回答「judge vs rule 谁稳」):rs_teacher(judge 评分)CMExam **−0.002 唯一负臂**,而 rs_mcq(rule)+0.012。judge 评「解释质量」非「正确性」→ 自信的错答也能拿高分 → 选进来任务不涨反跌。**RLAIF 经典 proxy reward 失败模式**(reward hacking:优化代理非真值)。但 rs_teacher 通识 +0.013(最高)、fb=0(从不回退,覆盖全)—— judge 信号「覆盖广 + 通识好」但「任务不准」。rs_both(rule∩judge)取交集:rule 保正确、judge 保质量 → 医学全臂最高。**三信号互补,无单一最优。**
+2. **★ teacher-only 选择未改善目标任务，提示 proxy mismatch**：rs_teacher 的 CMExam 为 **−0.002**（1/500 的点估计差异），rs_mcq 为 +0.012。judge 评解释质量而不是客观正确性，存在目标错配假设；但当前差异太小、只有单 seed，不能据此确认 reward hacking 或“反噬”。
 
-3. **★ correct 池里 letter 恒 = gold → rule 与 rule∩judge 只差解释质量**(最深隔离实验):rs_mcq 与 rs_both 的 chosen-letter 分布**完全相同** {A:278,B:333,C:331,D:349,E:268}。原因:correct 定义即 letter==gold,同一题的 correct 样本字母全 = gold → 无论按 rule(短)还是 judge(高分)选,字母恒定。**两 arm CMExam(0.524 vs 0.518)接近是结构性必然**,差异只在解释文本 → rs_both judge 重排的解释医学知识更好(医 0.5787 > rs_mcq 0.5763)。这隔离出「选择信号对解释质量的影响」:judge 选的解释 > 随机 correct,但 letter 已锁死、不影响任务分。
+3. **★ correct 池里 letter 恒为 gold，两个臂主要改变解释文本**：rs_mcq 与 rs_both 的 chosen-letter 分布相同。两臂 CMExam 接近与设计一致；但 CMMLU 医学仅相差约 0.25pp，不能据此判断 judge 重排的解释质量更好。解释质量需要独立盲评。
 
 ---
 
 ## 不在范围(边界)
 
-- hidden-state distill(跨框架不可行,Part A 已论证退化原因)
+- hidden-state distill（本轮因跨框架实现成本未做，不代表方法本身不可行）
 - TRL 原生 DistillationTrainer / GKD(VLLMClient 绑 vLLM + 偏 on-policy,MLX teacher 对接风险高 + 与 week19 off-policy 不可干净对照)
 - N>2000 / 全量(机制验通优先于规模)
 - teacher 换外部 API(隐私冲突,本地 30B MLX 已够)

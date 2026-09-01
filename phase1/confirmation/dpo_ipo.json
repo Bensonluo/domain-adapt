@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "spec_id": "P1-CONF-DPO-IPO-v1",
+  "method": "dpo_ipo",
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "frozen_at": "2026-08-28",
+  "claim": {
+    "hypothesis": "在 grouped preference split 与匹配 SFT baseline 下，DPO 或 IPO 可改善独立任务结果，而非只改善同构 log-probability 指标。",
+    "allowed_wording_if_supported": "在 grouped v1、三个 seed 和独立任务指标上，指定偏好目标相对匹配 SFT baseline 有可重复改善；结论限于本地确认候选，外部验证仍待完成。",
+    "wording_if_rejected": "该受控实验不支持偏好优化相对匹配 SFT baseline 的任务收益。",
+    "wording_if_inconclusive": "DPO/IPO 的方向性差异不确定，不宣称最佳 beta 或 IPO 普适优越。"
+  },
+  "seeds": [101, 202, 303],
+  "base_model": {
+    "id": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "config": {"path": "phase1/results/week12_lora_cpt/50_50_fused/config.json", "sha256": "41eb9baa243fc92dadd6ac800e1c073efcbc1cee198e360de07470420b7ef0a6"},
+    "weights": {"path": "phase1/results/week12_lora_cpt/50_50_fused/model.safetensors", "sha256": "0e724879f65e1e37775dcbd548b5241606333b8bf844994fea4fe3de4c42ae26", "size_bytes": 3441185441}
+  },
+  "comparison": {
+    "control": "matched_sft_baseline",
+    "treatments": ["dpo_beta_0.1", "ipo_tau_0.3"],
+    "treatment_variable": "preference_objective",
+    "fixed_controls": ["base_model_revision", "grouped_training_rows", "optimizer", "training_tokens", "generation_config", "evaluation_prompts"]
+  },
+  "data": {
+    "training": [{"path": "phase1/data/processed/preference/train_grouped_v1.jsonl", "sha256": "9c98771668b585559a9aa8664aef89f6e048df136c3f1e993e970e2987c45d9c"}],
+    "development": {"path": "phase1/data/processed/preference/dev_grouped_v1.jsonl", "sha256": "f73a7a12f584c3b93dfe92f607228d7c8196953be940a5f3491fb3f42dc62b61", "role": "preference_diagnostics_only"},
+    "confirmation": {"path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl", "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e", "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND", "is_blind": false}
+  },
+  "analysis": {
+    "primary_metric": "paired_cmexam_accuracy_delta_vs_matched_sft",
+    "secondary_metrics": ["length_stratified_win_rate", "response_length_shift", "cmmlu_macro_accuracy_delta"],
+    "paired_bootstrap_samples": 10000,
+    "mcnemar": true,
+    "decision_rule": "primary outcome must be independent of the optimized mean-logp preference objective",
+    "multiple_comparison_policy": "Holm correction across DPO and IPO"
+  },
+  "training_recipe": {
+    "optimizer": "adamw",
+    "learning_rate": 0.000005,
+    "epochs": 1.0,
+    "micro_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "max_sequence_length": 2048,
+    "preference_pairs": 1299,
+    "lora": {"rank": 16, "alpha": 32, "dropout": 0.05},
+    "matched_sft_construction": "chosen completion from every grouped-v1 training pair; same row order and optimizer-update count by seed",
+    "stopping_rule": "one fixed epoch; no development-selected stopping"
+  },
+  "method_specific": {"grouped_prompt_overlap_required": 0, "independent_outcome_metric": "cmexam_accuracy", "matched_sft_baseline_required": true},
+  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+}

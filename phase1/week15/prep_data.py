@@ -1,8 +1,13 @@
 """
 Phase 1 Week 15: 偏好数据切分 (train / holdout)
 
-从 week14 的 train.jsonl (1399 对) 里确定性切出 ~100 对 holdout，供偏好胜率评估。
-主训练用 train_split.jsonl，holdout 不进训练 → 胜率评估无数据泄漏。
+从 week14 的 train.jsonl (1399 对) 里逐行随机切出 ~100 对 holdout，供历史偏好胜率评估。
+
+重要：该历史切分只保证同一行不重叠，不能保证同一 normalized prompt/source
+不跨 train/holdout。2026-08-28 审计发现 50 个 prompt 组交叉。为保持旧实验可复现，
+本文件不覆盖历史产物；新的确认实验必须使用：
+    python phase1/audit/build_preference_grouped_split.py
+产出的 train_grouped_v1.jsonl / dev_grouped_v1.jsonl。
 
 幂等：train_split.jsonl / holdout.jsonl 已存在则跳过。
 用法：

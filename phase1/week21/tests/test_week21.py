@@ -120,6 +120,55 @@ class Week21Tests(unittest.TestCase):
             self.assertFalse(result["point_estimate_meets_margin"])
             self.assertEqual(result["mcnemar_exact"]["control_only_correct"], 1)
 
+    def test_clean_matched_replacement_is_deterministic_and_leakage_free(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            real = root / "real.jsonl"
+            synthetic = root / "synthetic.jsonl"
+            confirmation = root / "confirmation.jsonl"
+            # 40 real rows provide enough same-label choices for matching.
+            real_rows = []
+            for index in range(40):
+                row = mcq(index + 100)
+                row["answer"] = "ABCD"[index % 4]
+                row["Answer"] = row.pop("answer")
+                row["Question"] = row.pop("question")
+                row["Options"] = row.pop("options")
+                row["Explanation"] = row.pop("explanation")
+                real_rows.append(row)
+            write_jsonl(real, real_rows)
+            synthetic_rows = [mcq(index + 1000) for index in range(5)]
+            for index, row in enumerate(synthetic_rows):
+                row["answer"] = "ABCD"[index % 4]
+                row["synthetic_id"] = f"synthetic-{index}"
+                row["method"] = "test"
+            # One synthetic row exactly overlaps confirmation and must be rejected.
+            synthetic_rows[0] = {**mcq(9999), "synthetic_id": "leaked", "method": "test"}
+            write_jsonl(synthetic, synthetic_rows)
+            write_jsonl(confirmation, [{"id": "confirm", "prompt": "测试医学问题编号9999应选择哪一项\nA. x\n答案：", "answer": "A"}])
+
+            control = root / "control.jsonl"
+            treatment = root / "treatment.jsonl"
+            audit = root / "audit.json"
+            args = (
+                "--real-raw", str(real), "--synthetic", str(synthetic),
+                "--confirmation", str(confirmation), "--control-output", str(control),
+                "--treatment-output", str(treatment), "--audit-output", str(audit),
+                "--n-total", "8", "--synthetic-fraction", "0.5", "--real-pool-size", "40",
+            )
+            self.run_script("prepare_clean_matched_replacement.py", *args)
+            first_control = control.read_bytes()
+            first_treatment = treatment.read_bytes()
+            self.run_script("prepare_clean_matched_replacement.py", *args)
+            self.assertEqual(first_control, control.read_bytes())
+            self.assertEqual(first_treatment, treatment.read_bytes())
+            report = json.loads(audit.read_text())
+            self.assertTrue(report["invariants"]["equal_arm_records"])
+            self.assertTrue(report["invariants"]["equal_label_distribution"])
+            self.assertEqual(report["invariants"]["control_prohibited_overlap"], 0)
+            self.assertEqual(report["invariants"]["treatment_prohibited_overlap"], 0)
+            self.assertGreaterEqual(report["filtering"]["synthetic_rejected"].get("confirmation_similarity", 0), 1)
+
     def test_manual_review_labels_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             audit = Path(temp) / "audit.jsonl"

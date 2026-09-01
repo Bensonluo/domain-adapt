@@ -1,0 +1,89 @@
+{
+  "cmexam": {
+    "downstream_training_overlap": {
+      "phase1/results/week19_distill/data/distill_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week19_distill/data/mixed_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week19_distill/data/real_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week20_distill/data/rs_both_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week20_distill/data/rs_mcq_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week20_distill/data/rs_teacher_sft.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      },
+      "phase1/results/week21_synthetic/data/replacement_50.jsonl": {
+        "normalized_question_overlap_with_historical_holdout": 0,
+        "normalized_question_overlap_with_official_test": 0,
+        "records": 2000
+      }
+    },
+    "historical_holdout": {
+      "matched_to_official_test_prompts": 500,
+      "normalized_question_overlap_with_full_train": 26,
+      "normalized_question_overlap_with_grpo_train": 8,
+      "path": "phase1/data/processed/cmexam/holdout.jsonl",
+      "records": 500,
+      "sha256": "bbeed1d863bcd573448e93f6b77fcc4b57f93ea2e08bcc98de94544af7417377",
+      "status": "DEVELOPMENT_CONTAMINATED"
+    },
+    "question_overlap": {
+      "train_test": 253,
+      "train_valid": 248,
+      "valid_test": 54
+    },
+    "splits": {
+      "test": {
+        "path": "phase1/data/processed/cmexam/test.jsonl",
+        "records": 6811,
+        "sha256": "bedf88e106cbd7dbefa2a9df5b3539867b8664827fa87e22b489ba30e23b5621",
+        "within_split_duplicate_questions": 17
+      },
+      "train": {
+        "path": "phase1/data/processed/cmexam/train.jsonl",
+        "records": 54497,
+        "sha256": "01f47e773f6fe46569b306995c9e68cb832f402d46208f1d5a510f79b5ef8f3b",
+        "within_split_duplicate_questions": 1146
+      },
+      "valid": {
+        "path": "phase1/data/processed/cmexam/valid.jsonl",
+        "records": 6810,
+        "sha256": "096171ed18bd32d0f344409109e5d25f2621b1e56c490c2f92efb029b69f0373",
+        "within_split_duplicate_questions": 19
+      }
+    }
+  },
+  "cmmlu": {
+    "dev": {
+      "aggregate_sha256": "3418e1fdec559e54bf66dfc6cd005c7aff3ac604a0514237ed36285eb4e72959",
+      "csv_files": 67
+    },
+    "status": "DEVELOPMENT_PUBLIC_REUSED",
+    "test": {
+      "aggregate_sha256": "7eb87616fa446bee45a8c0754f3c1faf3b6ca33f35ac740311d25013ebd889ba",
+      "csv_files": 67
+    }
+  },
+  "created_at": "2026-08-28",
+  "normalization": "NFKC + casefold + collapsed whitespace",
+  "schema_version": "1.0"
+}

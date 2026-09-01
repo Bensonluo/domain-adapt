@@ -2,6 +2,8 @@
 
 > 目标: 从"用 API"到"理解 API 下面发生了什么"。做一次全量微调(不用 PEFT)。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`PARTIAL`。源码阅读材料和训练脚本存在；全量微调日志、峰值显存和 loss 曲线缺失。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 2 你看了 nanoGPT — 一个研究者写的简洁实现。这周看 HuggingFace Transformers — 工业界标准。你要对比两者的差距,理解"工程化"到底加了什么。
 >
@@ -56,7 +58,7 @@
 
 ## Day 5-6: 全量微调实验(不用 PEFT)
 
-> **思考**: 全量微调 1.5B 模型需要多少显存? (提示: AdamW 需要 2 个状态矩阵,每个参数 = 模型权重 + 梯度 + m + v = 4x 参数量的显存) 为什么 Week 4 要学 LoRA? 因为你这次会亲眼看到显存不够用。
+> **思考**: 全量微调 1.5B 模型需要多少显存? FP32 AdamW 的权重、梯度、m、v 仅参数相关部分约为 4 个 FP32 张量；实际显存还包含激活、临时 buffer 和框架开销。为什么 Week 4 要学 LoRA?
 
 ### 做什么
 1. 加载 `Qwen/Qwen2.5-1.5B-Instruct`
@@ -71,6 +73,7 @@ cd /root/workspace/domain-adapt/phase0/week3
 python train_full_ft.py \
     --model Qwen/Qwen2.5-1.5B-Instruct \
     --data /path/to/domain_data.jsonl \
+    --eval_data /path/to/domain_dev.jsonl \
     --output_dir ./results_full_ft \
     --epochs 3 \
     --batch_size 2 \
@@ -102,7 +105,7 @@ python train_full_ft.py \
 2. **全量微调 1.5B 模型,AdamW 的显存开销大约是多少?** (FP32 训练)
 3. **`DataCollatorForLanguageModeling` 做了哪两件事?**
 
-> 答案: 1) 自回归生成时每步只多一个 token,但 attention 要看所有历史。KV cache 把历史 token 的 K/V 存下来,避免重复计算。训练时所有 token 并行处理,不需要。2) 约 1.5B × 4 (权重 + 梯度 + m + v) × 4 bytes = ~24 GB (仅参数,不含激活)。3) (a) 动态 padding 到 batch 内最长序列; (b) 对 causal LM 自动创建 labels (右移一位的 input_ids)。
+> 答案: 1) 自回归生成时每步只多一个 token,但 attention 要看所有历史。KV cache 把历史 token 的 K/V 存下来,避免重复计算。训练时所有 token 并行处理,通常不使用生成式 KV cache。2) FP32 AdamW 的简化下界约为 1.5B × 4 个张量 × 4 bytes = 24 GB，仅计权重、梯度、m、v；实际还包含激活、临时 buffer，混合精度实现还可能保留 master weights。3) collator 负责动态 padding、padding label masking，并可从 input_ids 构造 labels；causal LM 的 logits/labels shift 通常在模型 loss 内部完成，不是 collator 预先右移。
 
 ---
 

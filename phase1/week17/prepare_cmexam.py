@@ -8,13 +8,15 @@ Phase 1 Week 17: CMExam → GRPO 格式转换
 
 输出:
   grpo_train.jsonl — GRPO 训练 prompt (默认 8K, 从 train.jsonl 单选题子采样)
-  holdout.jsonl    — CMExam holdout 答对率 eval (默认 500, 从 test.jsonl, 全程未训)
+  holdout.jsonl    — 历史 CMExam eval 子集（默认 500, 从 test.jsonl）
   格式: {"prompt": "题干\\nA. ...\\nB. ...\\n...\\n答案：", "answer": "D"}
 
 设计:
   - 只留单选 (len(Answer)==1): 多选 MCQ-accuracy reward 不适用 (逐条单字母比对)
   - prompt 末尾 "答案：" 引导模型首字符出字母 (与 reward_functions._FIRST 正则对齐)
-  - train/holdout 分流到不同原始 split (holdout 用 test, GRPO 只训 train) → 防泄漏
+  - 历史假设 train/test 原始 split 足以防泄漏；2026-08-28 规范化审计证伪：
+    当前 500 题中 8 题与实际 GRPO 8K train 重叠。本脚本仅保留用于历史复现，
+    新确认实验使用 phase1/audit/build_cmexam_confirmation_candidate.py 的产物。
   - 8K 子集先验机制 (plan: 60K 全量待机制确认后 stretch)
 
 Usage:

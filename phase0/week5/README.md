@@ -2,10 +2,12 @@
 
 > 目标: 理解 SFT 的每个细节,掌握 chat template 和 loss masking。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`PARTIAL`。template/masking 实现存在；masking 效果对照和质量/数量实验未完成。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 4 你理解了 LoRA 的数学 (SVD 视角) 和实现 (手写 + PEFT 源码)。LoRA 解决的是**硬件问题** — 用更少显存训练。这周解决的是**数据问题** — 怎么正确地喂训练数据。
 >
-> **为什么学这周**: SFT 是让 base model 变成 usable assistant 的关键步骤。如果你不理解 loss masking (只在 assistant 回复上算 loss),你的模型会浪费大量梯度去学习"怎么重复用户的 prompt"。这个 bug 很隐蔽 — 训练 loss 正常下降,但模型效果很差。
+> **为什么学这周**: SFT 是让 base model 变成 usable assistant 的关键步骤。assistant-only loss 让优化目标更贴近期望回答，避免长 prompt 主导 token loss；不 masking 不必然导致 prompt repetition，实际影响需要受控实验测量。
 >
 > **思考锚点**: "SFT 训练时,如果 labels = input_ids (不做 masking),模型在学什么? 如果做 masking,模型又只学什么?"
 
@@ -69,18 +71,16 @@ python phase0/week5/loss_masking.py
 
 ---
 
-## Day 5-6: 数据质量 vs 数量实验
+## Day 5-6: 数据质量与数量解耦实验
 
-> **思考**: LIMA 论文说 "1000 条高质量数据 > 50000 条低质量数据"。直觉上为什么? (提示: 模型从噪声中学到的也是噪声)
+> **思考**: 数据质量与数量可能交互；若两者同时变化，就无法判断效果来自哪一个因素。
 
 ### 做什么
-1. 准备 3 份数据:
-   - A: 500 条高质量 (人工审核)
-   - B: 2000 条中等质量 (自动清洗)
-   - C: 5000 条低质量 (原始爬取)
-2. 用 QLoRA 在 Qwen2.5-3B 上分别训练
-3. 在领域测试集上评估
-4. 复现 LIMA 核心结论: 数据质量 > 数量
+1. 质量主效应：固定 500 条及相近 assistant token，总体主题/难度/长度匹配，比较高质量与低质量。
+2. 数量主效应：从同一质量池抽取 500/2000/5000 条。
+3. 固定模型、模板、LoRA、优化器和评估集；至少 3 个 seed。
+4. 分别报告固定 epoch 与固定优化 token/step，避免把算力增加误认成数据多样性收益。
+5. 在新 blind test 上报告置信区间；实验前只能把“质量重要”写成假设。
 
 ### 交付物
 - `phase0/results/week5_quality_vs_quantity.md` — 实验报告
@@ -91,13 +91,13 @@ python phase0/week5/loss_masking.py
 
 ### 做什么
 整理个人 **SFT Checklist**:
-- 数据: 质量 > 数量,500 条好的 > 5000 条差的
+- 数据: 质量和数量分开控制；先审计去重、正确性、覆盖与难度，再通过实验确定投入优先级
 - Learning rate: `2e-4` (QLoRA) / `5e-5` (全量)
 - Epochs: `1-3`,多了过拟合
 - Batch size: 尽可能大,用 gradient accumulation 模拟
 - LoRA rank: `8` (小模型) 或 `16` (大模型)
 - LoRA alpha: 通常 = rank 或 2x rank
-- Target modules: `["q_proj", "v_proj"]` 最少,加更多更好
+- Target modules: 从 q/v 或 attention projections 起步；是否扩展到更多模块由参数预算和消融决定，不是越多越好
 
 ### 交付物
 - `phase0/notes/week5_sft_checklist.md`
@@ -116,9 +116,11 @@ python phase0/week5/loss_masking.py
 
 ## 验收清单
 
-- [x] 3 种 template 对比实验
-- [x] loss masking 手写实现 + 对比实验
-- [x] 数据质量 vs 数量实验报告
+- [x] 3 种 template 的 tokenization 对比
+- [ ] template 错配的训练效果对照
+- [x] loss masking 标签实现与 token 级检查
+- [ ] masking vs unmasked 训练效果对照
+- [ ] 数据质量与数量解耦实验报告
 - [x] 个人 SFT Checklist
 - [x] 自测题能回答 2/3 以上
 
@@ -128,8 +130,10 @@ python phase0/week5/loss_masking.py
 
 **Chat Template 对比** — [chat_template_compare.py](chat_template_compare.py) 对比 Qwen/ChatML、Llama-3、Mistral 三种 template 对同一条医疗对话的 tokenize 结果，分析 token 数差异、system 消息处理方式、模板错配的后果。见 [chat_template.ipynb](chat_template.ipynb) 的交互式对比。
 
-**Loss Masking 实现** — [loss_masking.py](loss_masking.py) 手写 mask_labels 函数：找到 `<|im_start|>assistant\n` 的 token 序列，只保留其后 token 的 label，其余设为 -100。这是 SFT 的核心 trick — 不做 masking 模型会浪费梯度学 prompt 部分。
+**Loss Masking 实现** — [loss_masking.py](loss_masking.py) 保留每个 assistant turn 的内容及结束 token，prompt/角色前缀设为 -100。当前完成的是目标构造与 token 级检查，尚未完成下游效果对照。
 
-**完整 SFT 训练脚本** — [sft_trainer.py](sft_trainer.py) 整合 chat template + loss masking + QLoRA，支持 Qwen2.5-3B-Instruct 的完整 SFT 流程。配置：LoRA r=16, alpha=32, target_modules=q/k/v/o_proj, NF4 量化。
+**完整 SFT 训练脚本** — [sft_trainer.py](sft_trainer.py) 整合 chat template + loss masking + QLoRA，支持 Qwen2.5-3B-Instruct 的完整 SFT 流程。默认起始配置为 LoRA r=16、alpha=32、target_modules=q/k/v/o_proj 和 NF4 量化，不代表已验证最优值。
 
-**SFT 最佳实践 Checklist** — [sft_checklist.md](sft_checklist.md) 整理了数据（质量>数量、去重、过滤）、训练（LR 2e-4 QLoRA / 5e-5 全量、1-3 epochs）、LoRA 配置（rank 8-16、alpha=rank 或 2x）的最佳实践。
+训练脚本要求显式提供预先按 prompt/实体/来源分组得到的 `--eval_data`，不再在训练脚本中随机按行拆分 dev，以避免组级近重复泄漏；每个 epoch 计算 dev loss，并按 `eval_loss` 恢复最佳 checkpoint。
+
+**SFT Checklist** — [sft_checklist.md](sft_checklist.md) 整理数据、模板、masking 和训练检查项。超参均为起始范围，不是跨模型通用最优值。

@@ -1,5 +1,7 @@
 # Week 12：CPT 效果评估（domain gain + 灾难性遗忘）
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。50/50 是后续操作性基线，不是已验证最优；LoRA、换模型、步数和数据处理同时变化，不能把改善单独归因给 LoRA。
+
 > 目标: 量化 CPT 的收益与损失——领域提升（domain gain）vs 通用遗忘（catastrophic forgetting）。
 > 预计时间: 10-14 小时
 
@@ -135,7 +137,7 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 - **而是**过拟合到 15 条假数据的分布，把 base 模型已有的能力也**破坏**了——医疗（−20%）和通用（遗忘 +42%）**同时崩**
 
 关键教训（本周核心 insight）：
-1. **小数据 + 全量微调 = 灾难**：15 条数据全量微调 200 iter，过拟合不仅零收益，还负迁移。全量 CPT 对数据量/质量极度敏感。
+1. **该 15 条数据 + MLX full-mode run 发生严重退化**：这说明此配置不适合作为 CPT 证据；不能把单次极端 demo 外推成“小数据或 full-mode 必然灾难”。
 2. **退化是全面的，非选择性遗忘**：若只是「学医疗忘通用」，医疗应升/通用降；实际医疗通用**都降** → 是模型能力整体被带偏（train loss 0.012 = 死记 15 条，破坏表征），不是领域替换通用。
 3. **反证了 week12 先做真数据的必要性**：在假数据上做任何 CPT 调参/ablation 都会被这种「全面退化」误导——必须先有真数据。
 
@@ -214,7 +216,7 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 | 固定项 | 值 | 依据 |
 |--------|-----|------|
 | model | Qwen/Qwen3-1.7B | 标准 qwen3 arch |
-| fine-tune-type | lora | base 冻结 → domain 学习隔离在 adapter，防全量漂移 |
+| fine-tune-type | lora | 限制可训练参数范围；是否降低能力漂移由评测确认 |
 | lora | rank16 / scale32 / dropout0.05, num-layers −1 | 跨三比例固定（比例成唯一变量）|
 | lr | 1e-5 | smoke 确认稳（1e-4 在旧 VLM 发散，不在新模型冒险）|
 | batch-size | 1 | probe 实测 batch=4 **不更快**（Metal 带宽受限，per-sample 吞吐相同 ~2.6s），取更省内存的 batch=1 |
@@ -222,7 +224,7 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 数据用 **Qwen3 tokenizer 重新 token-precise 混合**（旧 Qwen3.5 tokenizer 跨代词表不同不能复用）：100-0=4921 / 70-30=7031 / 50-50=5405 chunks。脚本：[`run_lora_sweep.sh`](run_lora_sweep.sh)（train×3 → fuse+eval → summary 一条龙）。
 
-### 结果（✅ 三比例全部正 domain gain，无灾难性遗忘）
+### 结果（三比例在当前 development benchmark 上均为正 domain gain，未观察到所测子集下降）
 
 **总览（vs base；旧 Qwen3.5 全量 FT 70-30 作历史锚，不同模型仅看进度方向）**
 
@@ -230,12 +232,12 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 |------|----------------------|----------------------|------|
 | 100-0 | **+0.033** | **−8.2%**（通用反升） | 纯领域 |
 | 70-30 | **+0.041** | **−10.4%**（通用反升） | |
-| **50-50** | **+0.043** ← 最优 | **−11.9%**（通用反升） | gain 最高 + 通用反升最多 |
+| **50-50** | **+0.043** ← 本次最高点估计 | **−11.9%**（通用反升） | 后续操作性基线；未证实最优 |
 | *旧 Qwen3.5 全量 FT 70-30* | *−0.086* | *+13.3%* | *week12 历史（不同模型）* |
 
-> 遗忘率为负 = CPT 后通用**不降反升**（`forgetting = (base−cpt)/base`，负即 cpt>base）。三比例通用全部略涨，**灾难性遗忘 = 0**——LoRA 把 domain 学习隔离在 adapter、不扰动 base 权重，直接验证了补完方向的核心假设。
+> 遗忘率为负 = CPT 后通用**不降反升**（`forgetting = (base−cpt)/base`，负即 cpt>base）。三比例在当前 CMMLU development 子集上均略涨，因此本次运行**未观察到所测能力下降**。这不能证明其他能力没有遗忘，也不能单独归因给 LoRA：相对旧 run，模型、训练方式、步数和数据处理同时改变。
 
-**领域提升 medical_cn 逐科（base → CPT；gain = CPT − base，正=提升）**——以最优 50-50 为例（另两比例形态一致，逐科见 [`domain_gain_lora_*.json`](../results/week12_lora_cpt/)）
+**领域提升 medical_cn 逐科（base → CPT；gain = CPT − base，正=提升）**——以后续采用的 50-50 为例（另两比例形态一致，逐科见 [`domain_gain_lora_*.json`](../results/week12_lora_cpt/)）
 
 | 子集 | base | 50-50 CPT | gain |
 |------|------|-----------|------|
@@ -260,17 +262,17 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 ### 分析：从「两头不讨好」到「两头都涨」
 
-1. **domain gain 符号翻转 = 补完成功**：week12 全量 FT 是 −0.086（underfit + 全量漂移），LoRA 三比例全部 +0.033~+0.043。根因对症——LoRA 隔离 domain 学习 + 2500 iter（week12 的 12×）让 adapter 真正学进 domain，而 base 冻结消除了全量漂移。**正 gain 基线已就位，替换负 gain 的 `real_cpt_fused`。**
+1. **新配置的 domain gain 符号转正**：旧 run 为 −0.086，新 Qwen3-1.7B + LoRA + 2500 iter 的三比例点估计为 +0.033~+0.043。这个结果足以选出一个后续开发基线，但多个变量同时变化，不能判定根因是 LoRA、步数、模型或它们的组合。
 
-2. **遗忘轴也翻转**：week12 全量 FT 通用遗忘 +13.3%（退化），LoRA 三比例全是**负遗忘**（通用略涨 8~12%）。其中混了通用数据的 70-30 / 50-50 涨得更多（world_history 0.57→0.73），符合预期——通用文本直接喂进去就练到通用任务。**「CPT 必然伤通用」在小模型 + LoRA + 混合数据下不成立。**
+2. **所测通用子集的点估计转正**：旧 run 为 +13.3% 遗忘，新配置三比例均为负遗忘（通用略涨 8~12%）。这反驳了“CPT 在所有条件下必然伤通用”的绝对命题，但只适用于当前 development 子集，不能证明整体通用能力没有下降。
 
-3. **比例对 domain gain 近乎不敏感（关键 insight）**：100-0 / 70-30 / 50-50 的 medical gain 只在 +0.033~+0.043 间（差 0.01，在 ±噪声内）。比例真正影响的是**通用轴**——通用数据占比越高，通用反升越多。→ 在这个配比区间，domain 提升主要靠「LoRA + 足量 iter」而非「配比微调」；配比是用来调 domain/general trade-off 的杠杆，不是 domain gain 的开关。
+3. **配比信号在本次单 seed 中很弱**：100-0 / 70-30 / 50-50 的 medical gain 为 +0.033~+0.043，差异约 0.01；通用轴呈随通用数据占比增加而上升的方向。两者都作为待多 seed 确认的趋势，不作机制或最优性结论。
 
-4. **幅度诚实**：+4% 是温和提升（8 科多数 +0.01~+0.08，无单科暴涨），符合「LoRA + 0.5 epoch + 10M token」的预期——CPT 在 benchmark acc 上的收益本就温和，真正的 domain fluency 提升要看生成（CMMLU 测不到）。但**符号 + 一致性**（8 科 7 涨、三比例同形态）足以说明 domain 知识真学进去了，不是噪声。
+4. **幅度与证据边界**：+4% 是温和点估计（8 科多数 +0.01~+0.08）。8 科 7 涨和三比例同方向值得确认，但在没有独立 seed、置信区间和新 blind test 前，不能排除抽样波动或开发集选择效应。
 
 ### week15 DPO 基线
 
-最优比例 **50-50**（domain gain 最高 + 通用反升最多）的 fused 模型作为 week15 DPO 起点：
+采用 **50-50**（本次点估计最高）的 fused 模型作为 week15 DPO 操作性起点；这不是最优比例的确认：
 
 ```
 phase1/results/week12_lora_cpt/50_50_fused/   ← week15 DPO baseline (替换负 gain 的 real_cpt_fused)
@@ -296,7 +298,7 @@ phase1/results/week12_lora_cpt/50_50_fused/   ← week15 DPO baseline (替换负
 - [x] 评估后端选定并跑通（mlx_lm.evaluate，非 lm_eval --model hf）
 - [x] 任务选型匹配 CPT 语种（中文 CMMLU，非英文 MMLU）
 - [x] base + CPT 模型都能评估（CPT 经 fuse 合并）
-- [x] domain gain + forgetting 量化完成（假数据：medical_cn **−0.199** / general_cn **+42%** 全面退化；真数据闭环：**−0.086 / +13.3%**，退化更轻但仍未转正；**LoRA-CPT 补完**：换 Qwen3-1.7B + LoRA + 2500 iter，三比例 domain gain **全部转正 +0.033~+0.043、遗忘翻负（无灾难性遗忘）**，50-50 最优 → week15 DPO 基线）
+- [x] domain gain + forgetting 点估计完成（假数据：medical_cn **−0.199** / general_cn **+42%**；真数据闭环：**−0.086 / +13.3%**；新 Qwen3-1.7B + LoRA + 2500 iter 配置的三比例 development 结果为 **+0.033~+0.043**，所测通用子集未下降；50-50 作为后续操作性基线，未证实最优）
 - [x] 至少 1 个关于 CPT 评估的个人 insight（见下）
 
 ---

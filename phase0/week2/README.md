@@ -2,6 +2,8 @@
 
 > 目标: 理解 production-quality 的小型 GPT 实现每一个细节,在领域数据上跑通训练。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`MOSTLY_DONE / EVIDENCE_PARTIAL`。训练和样例存在，产物映射与正式验收待补。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 1 你手写了 Transformer 的核心模块 — autograd、attention、FFN、MiniGPT。但那是一个最简化的教学实现。这周你要看 Karpathy 的 nanoGPT,理解"从玩具到可复现研究"的工程差距在哪里。
 >

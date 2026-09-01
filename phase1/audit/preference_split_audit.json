@@ -1,0 +1,40 @@
+{
+  "created_at": "2026-08-28",
+  "historical_random_split": {
+    "canonical_row_overlap": 0,
+    "dev_path": "phase1/data/processed/preference/holdout.jsonl",
+    "dev_records": 100,
+    "normalized_prompt_group_overlap": 50,
+    "train_path": "phase1/data/processed/preference/train_split.jsonl",
+    "train_records": 1299
+  },
+  "input": {
+    "duplicate_prompt_records": 338,
+    "max_prompt_group_size": 2,
+    "path": "phase1/data/processed/preference/train.jsonl",
+    "prompt_groups": 1061,
+    "records": 1399,
+    "sha256": "4b4634e227f4b9afdad79ad9a70561feed308983d1f2dfdd121714e69f9d9f48"
+  },
+  "new_split_overlap": {
+    "canonical_row_overlap": 0,
+    "normalized_prompt_group_overlap": 0
+  },
+  "outputs": {
+    "dev": {
+      "path": "phase1/data/processed/preference/dev_grouped_v1.jsonl",
+      "records": 100,
+      "sha256": "f73a7a12f584c3b93dfe92f607228d7c8196953be940a5f3491fb3f42dc62b61"
+    },
+    "train": {
+      "path": "phase1/data/processed/preference/train_grouped_v1.jsonl",
+      "records": 1299,
+      "sha256": "9c98771668b585559a9aa8664aef89f6e048df136c3f1e993e970e2987c45d9c"
+    }
+  },
+  "policy": "NFKC + casefold + collapsed whitespace; group by source_id and normalized prompt",
+  "schema_version": "1.0",
+  "seed": 123,
+  "source_id_default": "modelzhang/medical_evidence_DPO",
+  "target_dev_rows": 100
+}

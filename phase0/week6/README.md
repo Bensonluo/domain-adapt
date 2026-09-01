@@ -2,6 +2,8 @@
 
 > 目标: 把 Week 1-5 的所有知识整合,训练一个完整的领域 SFT 模型。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`EXTERNAL_SUBSTITUTE / PARTIAL`。外部项目完成了结构化实体匹配案例，但没有等价完成原计划的开放式任务与人工评估。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 5 你掌握了 SFT 的每个组件 — chat template、loss masking、数据质量。这周是 Phase 0 的实战高潮: 整合所有知识,端到端地训练一个你自己的领域模型。
 >
@@ -18,9 +20,9 @@
 ### 做什么
 1. 合成领域对话数据,或用公开数据集
 2. 数据格式化: 统一成 JSONL 格式
-3. 数据清洗: 去重(MD5)、过滤低质量(长度<10字)、格式校验
+3. 数据清洗: MD5 精确去重、最低长度启发式、格式校验；长度规则不能替代正确性/来源/覆盖/难度和人工抽检
 4. 构建 2000-5000 条高质量领域指令数据
-5. 划分 train/test (90/10)
+5. 按 prompt、实体、来源或生成模板分组划分 train/dev/test；随机行切分必须显式说明不存在组级依赖
 
 ### 公开数据集
 - HuatuoGPT: https://huggingface.co/datasets/FreedomIntelligence/HuatuoGPT-sft-data-v1
@@ -28,13 +30,19 @@
 
 ### 跑
 ```bash
-python phase0/week6/dataset_prep.py --input raw_data.jsonl --output domain_sft.jsonl
+python phase0/week6/dataset_prep.py \
+    --input raw_data.jsonl \
+    --output domain_sft.jsonl \
+    --eval_output domain_dev.jsonl \
+    --group_field entity_id \
+    --seed 42
 ```
 
 ### 交付物
 - `phase0/data/processed/domain_sft.jsonl`
-- `phase0/data/processed/domain_test.jsonl`
-- 数据清洗报告 (去重数、过滤数、质量分布)
+- `phase0/data/processed/domain_dev.jsonl`
+- 独立来源、冻结后只运行一次的 `domain_blind_test.jsonl`（不能由本脚本同池切分后反复调参）
+- 数据清洗报告（精确去重数、长度过滤数、错误类型；另附独立质量审计）
 
 ---
 
@@ -52,13 +60,13 @@ python phase0/week6/dataset_prep.py --input raw_data.jsonl --output domain_sft.j
 训练开始前确认:
 - [ ] BitsAndBytesConfig 使用 NF4 + double_quant
 - [ ] `prepare_model_for_kbit_training` 已调用
-- [ ] Loss masking 生效 (检查 labels 中 -100 的比例 > 50%)
-- [ ] target_modules 包含 q/k/v/o_proj
+- [ ] Loss masking 生效：每条样本有监督 token、prompt 被 mask、assistant 结束 token被监督；记录比例但不设通用 50% 阈值
+- [ ] target_modules、可训练参数量和选择理由已记录；是否扩展模块由消融决定
 
 训练中观察:
-- [ ] 前 100 步 loss 应该快速下降
-- [ ] 如果 loss 不降 → 检查 learning rate
-- [ ] 如果 loss 为 NaN → 检查 loss masking 是否正确
+- [ ] loss、梯度范数和 dev 指标按预定间隔记录；不预设所有任务前 100 步必须快速下降
+- [ ] loss 不降时联合检查数据目标、有效 batch、learning rate、冻结参数和 truncation
+- [ ] loss 为 NaN 时检查数值精度、学习率、异常样本、梯度和 masking，不把原因限定为 masking
 
 ### 跑 (GPU 服务器)
 ```bash
@@ -66,11 +74,14 @@ cd /root/workspace/domain-adapt/phase0/week6
 python domain_sft.py \
     --model Qwen/Qwen2.5-3B-Instruct \
     --data ../../data/processed/domain_sft.jsonl \
+    --eval_data ../../data/processed/domain_dev.jsonl \
     --output_dir ./domain-sft
 
 # 合并 adapter
 python merge_adapter.py --adapter ./domain-sft --output ./domain-sft-merged
 ```
+
+`--data` 与 `--eval_data` 必须在训练前按实体、prompt 或来源分组切分。脚本每个 epoch 计算 dev loss，并恢复 `eval_loss` 最低的 checkpoint；最终 blind test 不得用于该选择过程。
 
 ### 交付物
 - Adapter 权重 (`domain-sft/`)
@@ -84,9 +95,9 @@ python merge_adapter.py --adapter ./domain-sft --output ./domain-sft-merged
 > **思考**: 人工评估 20 题能说明什么? 不能说明什么? (为什么 Week 8 需要更系统的方法)
 
 ### 做什么
-1. 人工测试 20 个领域问题(覆盖不同场景和难度)
-2. 对比: 原始 Qwen2.5-3B vs 微调后的回答
-3. 记录评分(1-5)和幻觉频率
+1. 20 题仅作 smoke test，不作为正式效果结论；题目覆盖不同场景和难度
+2. base 与 finetuned 使用同 runtime、模板、解码参数，盲化模型身份和回答顺序
+3. 保存逐题评分、rubric 和错误切片；正式验收扩大冻结题集并使用至少两名评分者
 
 ### 跑
 ```bash
@@ -108,7 +119,7 @@ python phase0/week6/eval_manual.py \
 2. **domain_sft.py 中 `mask_assistant_labels` 如果找不到 assistant marker 会怎样?** 这是好的 fallback 吗?
 3. **merge adapter 后的模型和 merge 前的推理结果是否完全一致?** (数学上,不考虑数值精度)
 
-> 答案: 1) QLoRA 的模型权重只有 4bit,很省。主要花在: 优化器状态 (LoRA 参数的 AdamW m/v,虽然少但是 FP32) + 激活值 (gradient checkpointing 可以缓解)。2) 会 fallback 到全部计入 loss (不做 masking)。不算好 — 意味着会训练 prompt 部分。但总比报错好。3) 是的,merge 就是把 ΔW 加回 W_0,数学上等价,但浮点精度可能有微小差异。
+> 答案: 1) QLoRA 的量化基座权重较省显存，主要开销通常来自激活、LoRA 梯度/优化器状态和临时 buffer，具体占比依赖序列长度与实现。2) 必须 fail-closed 并报错；静默退化为全序列 loss 会改变训练目标、污染实验。3) merge 是把 ΔW 加回 W_0，数学上等价，但量化、反量化和浮点精度可能产生差异，应做数值/生成一致性检查。
 
 ---
 
@@ -124,32 +135,32 @@ python phase0/week6/eval_manual.py \
 
 ## 成果
 
-本项目所有 Week 6 交付物已在实战项目 [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training) 中完成。
+Week 6 使用实战项目 [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training/tree/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126) 作为替代性交付，证据固定到 commit `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126`。它证明完成了一个结构化实体匹配 SFT 案例，但模型、数据、任务和评估与原计划并不完全一致，且人工评估交付物仍缺失。
 
-**数据准备** — 从 14K+ 药品知识库生成 58K+ Alpaca 格式训练样本，含硬负采样、噪声注入、按药品编码零泄漏划分 train/val/test。见 [prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/prepare_data.py) 和 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/train/train.json)。
+**数据准备** — 从 14K+ 药品知识库生成 58K+ Alpaca 格式训练样本，含硬负采样、噪声注入，并按药品编码分组划分 train/val/test。该规则降低了实体编码层面的直接重叠，但不等于已经排除模板、归一化 query、候选集合和同生成器分布重合。见 [prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/prepare_data.py) 和 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/train/train.json)。
 
-**QLoRA 训练** — 支持 7 个预设（mac/poc/full 等），覆盖 Qwen3-1.7B 到 Qwen3-14B，含 MLflow + TensorBoard 追踪。见 [train_medical_entity.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/scripts/train_medical_entity.py) 和 [训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/config/domains/medical_entity.py)。
+**QLoRA 训练** — 支持 7 个预设（mac/poc/full 等），覆盖 Qwen3-1.7B 到 Qwen3-14B，含 MLflow + TensorBoard 追踪。见 [train_medical_entity.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/scripts/train_medical_entity.py) 和 [训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/config/domains/medical_entity.py)。
 
-**评估** — 分难度 accuracy 对比（base vs finetuned），10+ 次评估迭代。最新结果：hard 难度 66.7%。见 [evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/evaluate.py) 和 [评估结果](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/results/executive_summary_20260528_193258.md)。
+**评估** — 分难度 accuracy 对比（base vs finetuned），10+ 次评估迭代。该 commit 中记录的最新结果为 hard 难度 66.7%。见 [evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/evaluate.py) 和 [评估结果](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/results/executive_summary_20260528_193258.md)。
 
 ### 详细说明
 
 #### 数据工程
 
-[prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/prepare_data.py) 从 14K+ 药品知识库 (`drug_knowledge_base.json`) 动态生成训练样本。每条样本包含一个查询实体和多个候选实体，模型需要从候选中选出正确的标准名称。
+[prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/prepare_data.py) 从 14K+ 药品知识库 (`drug_knowledge_base.json`) 动态生成训练样本。每条样本包含一个查询实体和多个候选实体，模型需要从候选中选出正确的标准名称。
 
 负采样策略分三层：
 1. **同通用名不同剂型**（最强硬负例）— 如"恩替卡韦片" vs "恩替卡韦胶囊"
 2. **名称前缀相似** — 如"阿魏酸钠注射液" vs "阿魏酸钠片"
 3. **随机负例** — 补充多样性
 
-数据增强包括噪声注入（随机替换/删除/插入字符），模拟真实场景中的错别字。按药品编码划分 train/val/test，确保训练集和测试集的药品完全不重叠，避免数据泄漏。
+数据增强包括噪声注入（随机替换/删除/插入字符），模拟真实场景中的错别字。按药品编码划分 train/val/test，用于控制目标实体编码层面的直接重叠；正式验收还应报告 normalized query、模板和候选集合 overlap，不能把单层分组笼统称为“零泄漏”。
 
-最终产出 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/train/train.json)（58K+ 条）、[val.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/val/val.json)（7K+ 条）、[test_instruction.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/data/test/test_instruction.json)（7K+ 条），远超 Week 6 要求的 2000-5000 条。
+最终产出 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/train/train.json)（58K+ 条）、[val.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/val/val.json)（7K+ 条）、[test_instruction.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/test/test_instruction.json)（7K+ 条），远超 Week 6 要求的 2000-5000 条。
 
 #### QLoRA 训练
 
-[训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/config/domains/medical_entity.py) 提供 7 个预设，适配不同硬件和模型规模：
+[训练配置](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/config/domains/medical_entity.py) 提供 7 个预设，适配不同硬件和模型规模：
 
 | 预设 | 模型 | LoRA r/alpha | 硬件 |
 |---|---|---|---|
@@ -161,10 +172,10 @@ python phase0/week6/eval_manual.py \
 | mac-1b | Qwen3-1.7B | 16/32 | Mac 64GB |
 | poc | Qwen3-4B 4bit | 32/64 | 8GB GPU |
 
-所有预设的 target_modules 包含 `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj`，覆盖注意力层和 FFN 层。训练使用 cosine LR scheduler + 5% warmup，集成 [MLflow](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/src/tracking/mlflow_tracker.py) 和 TensorBoard 追踪。Adapter 合并通过 [merge_lora.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/scripts/merge_lora.py) 完成。
+所有预设的 target_modules 包含 `q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj`，覆盖注意力层和 FFN 层。训练使用 cosine LR scheduler + 5% warmup，集成 [MLflow](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/src/tracking/mlflow_tracker.py) 和 TensorBoard 追踪。Adapter 合并通过 [merge_lora.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/scripts/merge_lora.py) 完成。
 
 #### 评估
 
-[evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/evaluate.py) 对测试集逐条推理，与启发式基线对比。评估报告由 [report.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/main/domains/medical_entity/eval/report.py) 自动生成，包含分难度 accuracy、成本估算（延迟/吞吐量/日处理量）。
+[evaluate.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/evaluate.py) 对测试集逐条推理，与启发式基线对比。评估报告由 [report.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/eval/report.py) 自动生成，包含分难度 accuracy、成本估算（延迟/吞吐量/日处理量）。
 
 最新评估（2026-05-28）：finetuned model hard 难度 accuracy 66.7%，与启发式基线 67.3% 接近。当前瓶颈在困难样本（错别字/口语化表述），后续可通过增强噪声注入、增加训练轮次或升级基座模型来提升。

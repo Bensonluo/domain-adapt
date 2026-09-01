@@ -1,5 +1,7 @@
 # 人工评估评分标准
 
+> 状态：`TEMPLATE_ONLY`。尚无已完成评分或 IAA 结果。正式使用前必须冻结题集、盲化模型身份和回答顺序，并记录评分者背景与分歧处理流程。
+
 ## 评分维度
 
 ### 1. 准确性 (Accuracy)
@@ -41,12 +43,12 @@
 
 ## IAA 计算
 
-使用 Cohen's Kappa 计算评分者间一致性:
+1–5 分是有序分类，应按每个维度计算 weighted Cohen's Kappa，而不是把四个维度或总分混在一个普通 kappa 中：
 
 ```python
 from sklearn.metrics import cohen_kappa_score
 
-kappa = cohen_kappa_score(rater1_scores, rater2_scores)
+kappa = cohen_kappa_score(rater1_scores, rater2_scores, weights="quadratic")
 print(f"Cohen's Kappa: {kappa:.3f}")
 ```
 
@@ -56,4 +58,11 @@ print(f"Cohen's Kappa: {kappa:.3f}")
 - 0.4 < κ ≤ 0.6: 中度一致
 - κ ≤ 0.4: 一致性较差
 
-目标: κ > 0.6
+κ 阈值必须在评估前定义；除点估计外还应报告样本量、置信区间、各评分档分布和原始分歧率。若医学准确性涉及专业判断，应由具备相应资质的评分者参与，LLM 不能替代人类 IAA。
+
+## 盲化执行协议
+
+1. 冻结 50–100 道题和预期覆盖切片，正式评分前不用于调参。
+2. 隐藏模型名，随机化 A/B 顺序；同一评分者不能看到另一人的分数。
+3. 每个维度独立评分并保留备注，不用总分掩盖安全性/准确性失败。
+4. 先计算独立评分的一致性，再进行分歧仲裁；仲裁结果不能用于计算原始 IAA。

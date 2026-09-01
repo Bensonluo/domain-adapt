@@ -1,5 +1,7 @@
 # Week 10：CPT 实战准备
 
+> 方法学纠错与当前状态见 [`CORRECTIONS.md`](CORRECTIONS.md)。本周完成的是管线和约 1414 万 token 的小规模准备，未完成 1B–3B token 规模目标。
+
 > 目标: 构建 1B-3B token 医疗语料，配置 CPT 训练环境。
 > 预计时间: 12-16 小时
 
@@ -50,7 +52,7 @@ python phase1/week10/data_prep_cpt.py --corpus phase1/data/processed/cpt/ --toke
 
 ## 验收清单
 
-- [x] 医疗语料清洗完成（demo 验证逻辑；真实 1B+ 留训练前下载）
+- [x] 医疗语料清洗管线完成；本阶段真实语料约 1414 万 token，原 1B+ 规模目标未完成
 - [x] 4 种混合比例（纯领域 / 70-30 / 50-50 / 30-70）配置就绪
 - [x] Token 统计报告生成
 

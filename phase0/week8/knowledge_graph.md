@@ -32,7 +32,7 @@ LLM Domain Adaptation
 │   └── SFT
 │       ├── Chat Template (ChatML / Llama-3 / Mistral)
 │       ├── Loss Masking (ignore_index = -100)
-│       └── 数据质量 > 数量 (LIMA)
+│       └── 数据质量 × 数量（需解耦控制，LIMA 仅提供研究动机）
 ├── 评估
 │   ├── Benchmark
 │   │   ├── lm-eval-harness (MMLU / CMB)

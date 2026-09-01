@@ -1,0 +1,34 @@
+# Week 4 纠错记录
+
+> 审查日期：2026-08-28｜状态：`IMPLEMENTATION_DONE / SVD_CLAIM_INVALIDATED`
+
+## C1：把预训练权重低秩写成 LoRA 假设
+
+- 原问题：`lora_notes.md` 写成“预训练权重矩阵是低秩的”。
+- 为什么错：LoRA 的关键经验假设是任务适配的有效更新方向具有较低内在秩，不要求 `W_0` 本身低秩。
+- 已修复：改为冻结 `W_0`，学习低秩参数化增量 `ΔW=BA`。
+
+## C2：随机矩阵 notebook 被误写成 Qwen ΔW 实证
+
+- 原问题：README 和总结声称 notebook 分析 Qwen2.5-3B，并证明 rank 8–16 捕获大部分能量。
+- 为什么错：notebook 是随机 256×256 矩阵教学演示；并非训练后的 Qwen `ΔW`。早期累计比例还使用 `Σσ`，而 Frobenius 能量应使用 `Σσ²`。
+- 已修复：撤回 Qwen 和具体能量数字，修正为 `Σσ²`，清空与新公式矛盾的历史输出并要求重跑；SVD 验收改为部分完成。
+- 关闭条件：对真实 full-FT `ΔW=W_after-W_before` 做多层 SVD；不能用 LoRA 的 `BA` 自证低秩，因为它按构造就是低秩。
+
+## C3：rank 不能由单一理论默认值决定
+
+- 原问题：把 rank 8/16 写成普适推荐。
+- 为什么错：最佳 rank 与任务、模块、模型、数据和训练预算共同相关。
+- 修复方法：将 rank/alpha/target modules 写成起始搜索范围，要求匹配条件消融。
+
+## C4：把论文单一设置泛化成工程定律
+
+- 原问题：论文笔记把 q+v 结果概括成“95%+、性价比最高”，并声称换 rank 不必重调学习率、简单任务固定使用低 rank。
+- 为什么错：任务分数不能直接换算为“保留效果百分比”；target modules、rank、alpha 与学习率存在任务和预算依赖，论文中的局部消融不是普适定律。
+- 已修复：将论文结果限定到对应实验设置，把 q+v、rank、alpha 和 target modules 全部改为需匹配消融验证的候选起点。
+
+## C5：QLoRA 笔记虚构 Figure 1 对照并泛化等价性
+
+- 原问题：把无来源的 65B/MMLU/GSM8K 表标成论文 Figure 1，并写成 QLoRA 普遍“不输 full FT”、显存固定缩减比例；PEFT 笔记仍称换 rank 无需调学习率。
+- 为什么错：论文展示的可行性与特定评估不能替代同条件 full-FT 因果对照；显存构成依赖序列、batch、kernel 和 checkpointing，rank/alpha/LR 也相互影响。
+- 已修复：撤回伪表和固定比例，限定 65B/48GB 为论文设置；修正 paged optimizer、buffer 和超参表述。

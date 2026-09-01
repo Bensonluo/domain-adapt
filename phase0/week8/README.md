@@ -2,10 +2,12 @@
 
 > 目标: 建立 LLM 评估能力,为后续 Phase 1 实验提供评估基础设施。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`STRUCTURED_EVAL_PRESENT / FULL_EVAL_INCOMPLETE`。结构化案例报告存在，开放式 judge、人工评分和 IAA 未闭环。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 7 推导了核心数学 — attention 梯度、softmax+CE、LoRA SVD、DPO、AdamW。这周回到工程: 你在 Week 6 训练的领域模型到底好不好? 怎么量化地回答这个问题?
 >
-> **为什么学这周**: 不会评估 = 不会改进。评估是你所有实验迭代的起点。你的方向是 domain adaptation — 每次换一个领域数据,都需要快速评估效果。Benchmark + LLM-as-Judge + 人工评估,三层体系缺一不可。
+> **为什么学这周**: 不会评估 = 不会改进。评估方式应与任务匹配：有可靠 ground truth 的结构化任务优先自动评估；开放式任务再组合 benchmark、盲化人工评估和经过校准的 LLM judge。不是所有任务都机械要求三层方法。
 >
 > **思考锚点**: "如果你的 SFT 模型在 MMLU 上分数比基座低,但在领域测试上更好,哪个更可信? 为什么?"
 
@@ -138,15 +140,18 @@ Phase 0 能力树:
 2. **位置 bias 是什么?** `judge_with_swap` 怎么减轻它?
 3. **如果你的 SFT 模型在所有 MMLU 子集上都比基座低 2-3 个点,但在领域测试上明显更好,你会继续优化还是接受这个 trade-off?**
 
-> 答案: 1) Benchmark 只能测通用能力,不覆盖你的具体领域;LLM-as-Judge 有自身 bias (位置/长度/自评);人工评估成本高但最可信。三层互补。2) 位置 bias = LLM judge 倾向于选择放在前面的回答。swap 方法: 同一对回答跑两次 (AB 和 BA),如果两次结果一致才采用,不一致则记为 tie。3) 这是典型的 domain adaptation trade-off。通常可以接受 — 2-3 点 MMLU 下降是轻微的通用能力损失,换来了显著的领域能力提升。如果下降 > 5 点,需要考虑数据质量或训练策略。
+> 答案: 1) Benchmark 覆盖有限；LLM-as-Judge 有位置、长度和自评偏差；人工评估成本高且也需要 rubric/IAA。应按任务选择互补方法。2) 位置 bias = judge 倾向放在特定位置的回答；swap 只能缓解，不能消除全部偏差。3) 是否接受通用能力下降必须在实验前根据用途定义门槛并报告置信区间，不能事后用固定 2-3/5 点规则决定。
 
 ---
 
 ## 验收清单
 
-- [ ] Benchmark 评估报告 (基座 vs SFT)
-- [ ] LLM-as-judge 实现代码
-- [ ] 人工评估 rubric + 初步评分 + IAA
-- [ ] Phase 0 知识图谱
-- [ ] Phase 1 切入点规划
+- [x] 独立 `master_data` 案例的结构化评估报告
+- [ ] 同一 Week 6 模型的通用 benchmark (基座 vs SFT)
+- [x] LLM-as-judge 原型代码
+- [ ] LLM-as-judge 运行结果与校准记录
+- [x] 人工评估 rubric 模板
+- [ ] 盲化人工评分 + 分维度 IAA
+- [x] Phase 0 知识图谱
+- [x] Phase 1 切入点规划
 - [ ] 自测题能回答 2/3 以上

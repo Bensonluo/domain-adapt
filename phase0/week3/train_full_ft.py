@@ -8,6 +8,7 @@ Week 3: Qwen-1.5B 全量微调
     python phase0/week3/train_full_ft.py \
         --model Qwen/Qwen2.5-1.5B-Instruct \
         --data /path/to/domain_data.jsonl \
+        --eval_data /path/to/domain_dev.jsonl \
         --output_dir ./results_full_ft \
         --epochs 3 \
         --batch_size 2 \
@@ -61,9 +62,8 @@ def train(args):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dataset = load_data(args.data, tokenizer, args.max_length)
-    # 90/10 split
-    dataset = dataset.train_test_split(test_size=0.1)
+    train_dataset = load_data(args.data, tokenizer, args.max_length)
+    eval_dataset = load_data(args.eval_data, tokenizer, args.max_length)
 
     training_args = TrainingArguments(
         output_dir=args.output_dir,
@@ -76,7 +76,12 @@ def train(args):
         logging_steps=10,
         eval_strategy="epoch",
         save_strategy="epoch",
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         bf16=device == "cuda",
+        seed=args.seed,
+        data_seed=args.seed,
         report_to="none",
     )
 
@@ -88,8 +93,8 @@ def train(args):
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["test"],
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         data_collator=data_collator,
     )
 
@@ -112,10 +117,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--data", required=True)
+    parser.add_argument(
+        "--eval_data",
+        required=True,
+        help="预先按 prompt/实体/来源分组切分的独立 dev JSONL",
+    )
     parser.add_argument("--output_dir", default="./results_full_ft")
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=5e-5)
     parser.add_argument("--max_length", type=int, default=512)
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     train(args)

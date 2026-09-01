@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "status": "DRAFT_NOT_FROZEN",
+  "claim": {
+    "claim_id": null,
+    "hypothesis": null,
+    "allowed_wording_if_supported": null,
+    "wording_if_rejected": null,
+    "wording_if_inconclusive": null
+  },
+  "freeze": {
+    "frozen_at": null,
+    "frozen_by": null,
+    "git_commit_or_worktree_hash": null,
+    "no_changes_after_freeze": true
+  },
+  "data": {
+    "train_path": null,
+    "train_sha256": null,
+    "development_path": null,
+    "development_sha256": null,
+    "confirmation_path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+    "confirmation_sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e",
+    "external_blind_path_or_evaluator": null
+  },
+  "models": [
+    {
+      "arm": "control",
+      "base_model_revision": null,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    },
+    {
+      "arm": "treatment",
+      "base_model_revision": null,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null
+    }
+  ],
+  "training": {
+    "seeds": [101, 202, 303],
+    "config_path": null,
+    "fixed_token_budget": null,
+    "stopping_rule": null
+  },
+  "analysis": {
+    "primary_metric": null,
+    "minimum_practical_effect_or_margin": null,
+    "paired_bootstrap_samples": 10000,
+    "mcnemar": true,
+    "multiple_comparison_policy": null,
+    "failure_taxonomy": null
+  },
+  "execution": {
+    "confirmation_run_count": 0,
+    "result_path": null,
+    "per_example_predictions_path": null,
+    "completed_at": null
+  }
+}

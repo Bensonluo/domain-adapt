@@ -1,5 +1,7 @@
 # Week 18：Distillation 理论
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。蒸馏、合成数据和 on-policy 的优劣均是条件性问题，不能脱离 teacher、reward、预算和验证成本外推。
+
 > 目标: 理解三种蒸馏方法，精读 3 篇核心论文。
 > 预计时间: 10-14 小时
 
@@ -51,9 +53,9 @@
 
 1. **Response distillation 和普通 SFT 有什么区别？**
 2. **Feature distillation 为什么要加 projection layer？**
-3. **On-policy distillation 为什么效果最好但最贵？**
+3. **On-policy distillation 为什么可能更有效、但通常更贵？**
 
-> 答案: 1) 训练算法几乎相同（都是交叉熵 SFT），区别在**数据来源与信息量**：普通 SFT 用人工标注的 hard label（1 bit 信息），response distillation 用 teacher 生成的输出（可拿 soft label，携带"类间关系"的 dark knowledge）；成本上，模型造数据可无限放大、远比人工便宜，天花板是 teacher 能力而非标注预算。2) 因为 teacher 和 student 的 hidden state **维度通常不同**（如 768d vs 384d），无法直接算距离；projection layer 是一个可学习的线性映射 `W: student_dim → teacher_dim`，把 student 表示投影到 teacher 空间再对齐，从而**解耦 student 架构**（允许砍宽度）。DistilBERT 不需要 projection，是因为它故意保持 hidden size=768 与 BERT 相同，只砍层数。3) **效果最好**因为 student 在自己的分布上探索（on-policy），能发现 teacher 没示范的好路径，本质是 RL，**能超越 teacher**（R1 的 aha moment）；**最贵**因为：多轮迭代（生成→打分→训练循环）、大量采样（每样本生成 N 条只用相对信号）、需要 reward（规则 reward 限可验证任务，神经 RM 有 hacking 风险）、在线生成（GPU 开销大）。详见 [comparison 第六节](../notes/week18_distillation_comparison.md)。
+> 答案: 1) response distillation 与 SFT 常共享交叉熵训练形式，但数据来源和监督信息不同；hard target 不是固定“1 bit”，信息量取决于词表、序列和条件分布。模型生成可扩展，但生成、筛选和事实验证同样有成本。2) teacher/student hidden size 不同时通常需要 projection 或其他对齐方式；架构相同则可能不需要。3) on-policy 方法让 student 在自身分布上采样，可能改善分布匹配，但收益取决于探索、reward、迭代和预算；它不必然最好，也不保证超过 teacher。多轮生成、打分和在线采样通常使其更贵。详见 [comparison 第六节](../notes/week18_distillation_comparison.md)。
 
 ---
 

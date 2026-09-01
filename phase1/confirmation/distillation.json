@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "spec_id": "P1-CONF-KD-v1",
+  "method": "distillation",
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "frozen_at": "2026-08-28",
+  "claim": {
+    "hypothesis": "在相同 prompt/completion、训练 token、步数和 seed 下，soft KL 相对 hard CE 改善医学确认集并减少通用能力退化。",
+    "allowed_wording_if_supported": "在同数据同预算和三个 seed 的受控比较中，soft KL 相对 hard CE 有可重复收益；结论限于该 teacher/student/config 和本地确认候选，外部验证仍待完成。",
+    "wording_if_rejected": "该受控配置不支持 soft KL 优于 hard CE。",
+    "wording_if_inconclusive": "hard/soft 监督差异不确定，不把历史跨实验差异归因于 soft labels。"
+  },
+  "seeds": [101, 202, 303],
+  "base_model": {
+    "id": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "config": {"path": "phase1/results/week12_lora_cpt/50_50_fused/config.json", "sha256": "41eb9baa243fc92dadd6ac800e1c073efcbc1cee198e360de07470420b7ef0a6"},
+    "weights": {"path": "phase1/results/week12_lora_cpt/50_50_fused/model.safetensors", "sha256": "0e724879f65e1e37775dcbd548b5241606333b8bf844994fea4fe3de4c42ae26", "size_bytes": 3441185441}
+  },
+  "comparison": {
+    "control": "hard_ce_alpha_1",
+    "treatments": ["mixed_alpha_0.5", "soft_kl_alpha_0"],
+    "treatment_variable": "supervision_loss_mixture_only",
+    "fixed_controls": ["student_revision", "teacher_revision", "prompt_completion_ids", "tokenizer", "training_tokens", "steps", "optimizer", "evaluation_prompts"]
+  },
+  "data": {
+    "training": [
+      {"path": "phase1/results/week19_distill/data/distill_sft.jsonl", "sha256": "65b9900b5334ef0c266ee6e0712f95c9150a532e11a287931bfab13246bf853b"},
+      {"path": "phase1/results/week20_distill/data/teacher_topk_logits.jsonl", "sha256": "b2a5fbaaf20e69ed7b82955bed53a68c281b2c541c018d5a3b577b78b0c0a4d6"}
+    ],
+    "development": {"id": "cmmlu_local_all", "sha256": "7eb87616fa446bee45a8c0754f3c1faf3b6ca33f35ac740311d25013ebd889ba", "role": "regression_monitor_only"},
+    "confirmation": {"path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl", "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e", "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND", "is_blind": false}
+  },
+  "analysis": {
+    "primary_metric": "paired_cmexam_accuracy_delta_soft_kl_vs_hard_ce",
+    "secondary_metrics": ["cmmlu_macro_accuracy_delta", "token_level_kl", "calibration_ece"],
+    "paired_bootstrap_samples": 10000,
+    "mcnemar": true,
+    "decision_rule": "mechanism wording requires same prompt/completion IDs and equal optimization-token budget",
+    "multiple_comparison_policy": "alpha values are preregistered; Holm correction for two comparisons vs hard CE"
+  },
+  "training_recipe": {
+    "optimizer": "adamw",
+    "learning_rate": 0.00002,
+    "epochs": 3.0,
+    "micro_batch_size": 4,
+    "gradient_accumulation_steps": 4,
+    "max_sequence_length": 1536,
+    "temperature": 2.0,
+    "teacher_top_k": 20,
+    "examples": 2000,
+    "lora": {"rank": 16, "alpha": 32, "dropout": 0.05},
+    "stopping_rule": "three fixed epochs with identical example order per seed; no development-selected stopping"
+  },
+  "method_specific": {"alpha_values": [1.0, 0.5, 0.0], "same_prompt_completion_ids_required": true, "equal_optimization_tokens_required": true},
+  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+}

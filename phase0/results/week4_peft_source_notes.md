@@ -130,8 +130,8 @@ PEFT 用 `ModuleDict` 存储 A 和 B（key 是适配器名字），forward 遍�
 |--------|---------|------|
 | B=0 初始化 | 核心 | 保证训练开始时输出不变 |
 | merge/unmerge | 核心 | 推理零开销的关键操作 |
-| scaling = alpha/r | 核心 | 控制更新量级，换 rank 不用调学习率 |
-| Dropout | 实用 | 防过拟合，小数据集必备 |
+| scaling = alpha/r | 核心 | 控制更新量级；换 rank 后仍可能需要重调学习率 |
+| Dropout | 实用 | 候选正则化手段；是否有益需按数据和任务验证 |
 | dtype 转换 | QLoRA 必备 | 基座 4bit + LoRA 16bit 需要类型对齐 |
 | rsLoRA (1/sqrt(r)) | 进阶 | rank 变化时训练更稳定 |
 | PiSSA 初始化 | 进阶 | SVD 初始化加速收敛 |

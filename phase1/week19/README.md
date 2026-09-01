@@ -1,5 +1,7 @@
 # Week19：Response Distillation 实战（本地 teacher + 三源受控对照）
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。三臂结果来自单 seed 和复用 dev；“保知识/稀释”等只作为方向性机制假设。
+
 > 目标：用本地 30B teacher 蒸馏 student，做**受控三对照**（同题只换 completion 来源）干净回答"学 teacher 答案 vs 学人答案，差距在哪"，并与 week17 GRPO 同口径直接比"蒸馏 vs RL"。
 >
 > **思考锚点**："蒸馏数据训练的小模型，和真实数据训练的，差距在哪？蒸馏的瓶颈是什么？"
@@ -61,7 +63,7 @@ A
 
 **★ 诚实噪声读法**：n=500 配对比较，real−distill = **3 题**，real−mixed = 6 题，配对 SE ≈ 0.032 → **「real > distill > mixed」排序在噪声内，不能当结论**。能站住的只有：**三臂都压过 base**（方向一致，3 个独立信号同向）。即——单论目标任务，**response 蒸馏 ≈ 人写 SFT ≈ GRPO**（都 +0.012~+0.024），分不出高下。`unparseable=0` 三臂都是 → 格式化修正生效，eval 干净。
 
-### ③ CMMLU（遗忘检查）—— 真正的信号在这里
+### ③ CMMLU（development 遗忘检查）—— 方向性信号
 
 | 臂 | medical_cn | Δ | general_cn | Δ |
 |---|---|---|---|---|
@@ -80,7 +82,7 @@ A
 | nutrition | 0.61 | 0.57（−0.04） | 0.59（−0.02） |
 | virology | 0.64 | 0.61（−0.03） | 0.60（−0.04） |
 
-`clinical_knowledge` 单任务 −0.10 就把 real aggregate 拖垮；distill 同任务只 −0.02。**人写解释砸临床知识，teacher 解释没砸。**
+`clinical_knowledge` 单任务 −0.10 是 real aggregate 下降的主要来源；distill 同任务为 −0.02。这个差异是待验证信号，不能仅凭单 seed 归因给解释来源。
 
 （汇总 [`distill_summary.json`](../results/week19_distill/distill_summary.json)，loss_log / run_config / scores / preds 在 [`phase1/results/week19_distill/`](../results/week19_distill/)）
 
@@ -88,17 +90,17 @@ A
 
 ## 结构性解读（核心贡献）
 
-**为什么 real 砸知识而 distill 不砸？** CMExam 人写 `Explanation` 是"（B对）（A错）"**考试口诀体**，密度高但概念窄 → SFT 把 student 往窄答案模式拉，顺带擦掉 base 的临床常识。teacher（30B）输出是**概念解释**（"雷尼替丁阻断 H₂ 受体减少胃酸"）→ student 学到 QA 格式 + 轻推理，**没替换掉 base 知识**。
+**待验证机制假设：为什么 real 臂下降而 distill 臂未明显下降？** 人写 `Explanation` 与 teacher 输出在风格、长度、信息密度和正确性上同时不同，可能造成不同的知识迁移/干扰；当前设计不能把差异单独归因于“考试口诀体”或“概念解释”。
 
 三条结论：
 
-1. **目标任务打平**：三 SFT 臂 ≈ GRPO（+0.012~+0.024），response 蒸馏作为 task 拟合手段**够用**。
-2. **distill 的价值在 knowledge-preserving**（不是 task 更高）：real 用 −0.025 医学换 +0.024 任务，**distill 用 −0.001 换 +0.018，几乎免费涨**。teacher 概念解释 > 人写考试口诀。
-3. **mixed 最差 = 稀释**：纯源 > 50/50 混合，两套风格对冲。
+1. **目标任务点估计接近**：三 SFT 臂与 GRPO 为 +0.012~+0.024；在没有重复 seed 和区间前，只能称当前开发集上接近。
+2. **knowledge-preserving 的方向性信号**：real 为医学 −0.025 / 任务 +0.024，distill 为医学 −0.001 / 任务 +0.018。该差异值得受控复验，不能在单 seed 下断言 teacher explanation 必然优于人写解释。
+3. **mixed 本次点估计较低**：可能来自风格、采样或优化差异；“两套风格对冲/稀释”只是机制假设。
 
-**蒸馏没被 teacher 天花板卡死**：teacher 86% vs student 53%，student 学到的是 **QA 格式 + 轻推理**而非 teacher 的知识深度 → distill 臂 task 分（53%）远低于 teacher 准确率（86%）却仍压过 base，证实蒸馏的是"怎么答"不是"答什么"。
+**teacher/student 差距仍大**：teacher 86% vs student 53%，distill 臂略高于 base。这与“学习了回答模式或部分推理信号”一致，但当前评测不能区分模型究竟学到“怎么答”还是“答什么”。
 
-**对照 GRPO 修正上周结论**：GRPO 的优势**不是 task 更强**（SFT 打平），是**唯一三项全正**（task +0.022 / 医 +0.002 / 通 +0.005）—— collateral damage 最小。distill-SFT 是知识保住的第二优。
+**与 GRPO 的描述性对照**：GRPO 在该次运行的三个点估计均为正（task +0.022 / 医 +0.002 / 通 +0.005）。这提示其附带退化可能较小，但不能在跨 run 单 seed 比较中确定方法排序。
 
 ---
 
@@ -107,7 +109,7 @@ A
 - [x] 三臂 train+fuse+eval 完成（real/distill/mixed，各 2000 题）→ [`distill_summary.json`](../results/week19_distill/distill_summary.json)
 - [x] 受控三对照（同题只换 completion，格式化保证 eval 同口径）
 - [x] teacher 准确率报告（0.8645，蒸馏上界 insight）
-- [x] ≥1 结构性 insight：**「distill 的价值在知识保住不在 task 更高」** + **「人写考试口诀砸临床知识、teacher 概念解释不砸」** + **「mixed 稀释 < 纯源」**
+- [x] 形成待确认机制假设：teacher explanation 可能减少附带退化；mixed 点估计较低的原因待严格控制
 - [x] 与 week17 GRPO 同口径直接对比（CMExam holdout）
 - [x] 噪声诚实读法（臂间排序在噪声内，三臂压 base 是真信号）
 

@@ -1,5 +1,7 @@
 # Week 14：DPO + GRPO 实战准备
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。偏好数据存在显著长度偏差；随机样本切分尚未证明同 prompt/source 不跨 train/holdout。
+
 > 目标: 构建偏好数据集，阅读 TRL 源码，设计实验矩阵。
 > 预计时间: 12-16 小时
 
@@ -46,7 +48,7 @@ python phase1/week14/build_pref_data.py
 
 ### QC 关键发现（驱动实验设计）
 
-- **长度偏差严重**：chosen 更长占 **93.5%**，`|chosen−rejected|/max > 0.5` 占 **32%**。→ **长度黑客风险高**：DPO 用 `Σ logp`，chosen 更长 → logp 总和更大 → 模型可能学「更长=更好」而非「更好=更好」。必须配长度控制评估 + 考虑 IPO / length-normalized DPO（见矩阵行 2 可选第 7 实验 + TRL 笔记 §1.5）。
+- **长度偏差严重**：chosen 更长占 **93.5%**，`|chosen−rejected|/max > 0.5` 占 **32%**。→ **长度混杂风险高**：序列 `Σ logp` 会随长度系统变化，但 token log-prob 通常为负，不能简单写成“更长所以总和更大”。必须用长度匹配分层和独立 outcome metric 实测，并比较 length-normalized 方法（见矩阵行 2 可选实验 + TRL 笔记 §1.5）。
 - **max_seq 规划**：prompt+chosen token p95=2980 / p99=3356 / max=3815 → DPO `max_length≈4096`（仅 54% 对 fit 2048）。0.8B 全量 + 4096 ctx 在统一内存上偏紧，需 grad-checkpoint。
 - 去重策略修正：按 **(prompt, chosen, rejected) 完整三元组**去重（不按 prompt）——同一 prompt 带不同 chosen/rejected 是合法偏好对（更多 preference signal），不应丢。最终 0 条完全重复。
 
@@ -101,7 +103,7 @@ python phase1/week14/build_pref_data.py
 ## 验收清单
 
 - [x] 偏好数据构建完成（1399 对，in-domain 公开数据集替代 stub）
-- [x] 长度偏差**已量化并可控**（chosen 更长 93.5% → 矩阵配长度控制胜率 + IPO/length-normalized 可选实验）
+- [x] 长度偏差已量化（chosen 更长 93.5%）；尚未证明可控，确认实验需 grouped split、长度匹配分层和独立 outcome
 - [x] DPOTrainer + GRPOTrainer 源码阅读完成（DPO loss + GRPO reward normalization 各有「代码做了什么 + 对应 week13 哪个公式」段）
 - [x] GRPO reward function 设计完成（矩阵行 4/5：医学关键词 + 长度惩罚 + 结构分，含 ablation）
 - [x] 实验矩阵文档完成（6 行，每行可执行 + 基线 + 评估路径）

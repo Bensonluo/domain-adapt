@@ -49,7 +49,7 @@ Hinton et al. 2015 的经典框架:
            = teacher 和 student soft 分布的交叉熵
 
 为什么有效?
-  - hard label (one-hot) 只有 1 bit 信息: "答案是 class 3"
+  - hard target 只给出目标类别/序列，不携带完整 teacher 分布；其信息量不是固定 1 bit
   - soft label 携带 teacher 的「不确定结构」:
     "答案大概率是 3，但 7 也有点像，1 几乎不可能"
   - 这些"暗知识"(dark knowledge) 是 teacher 的泛化能力，hard label 丢掉了
@@ -189,7 +189,7 @@ Feature distillation (DistilBERT 加的 L_cos):
 
 ## 我的 takeaway
 
-1. **蒸馏的本质是"信息密度"**：hard label 1 bit，soft label 携带整个分布的结构。把 teacher 学到的"类间关系"传给 student，比直接学正确答案高效得多。
+1. **蒸馏可以传递 hard target 之外的分布信息**：soft target 携带 teacher 的相对概率结构，可能帮助 student 泛化；收益取决于 teacher 质量、温度、loss 和任务，不能写成固定“1 bit vs 更高效”。
 2. **初始化是被低估的杠杆**。从 teacher 隔层拷贝权重，比随机初始化多保住 3.69 个 GLUE 点——这在工程上几乎免费，但收益比任何一个 loss 都大。做蒸馏时，"从 teacher 的好起点出发"是第一原则。
 3. **triple loss 是 feature distillation 的模板**：response（学输出）+ 自身任务（学能力）+ feature（学表示）。后续所有 feature 蒸馏工作都是在这个框架上加料。
 4. **DistilBERT 是蒸馏的"奠基"**，但它的 teacher 是同类小模型（BERT→小 BERT）。真正的范式跃迁是后面用 GPT-4 当 teacher 蒸到 7B（Zephyr）——把"大模型的能力"低成本搬到"可部署的小模型"。三篇串起来读才完整（见 [../week18_distillation_comparison.md](week18_distillation_comparison.md)）。

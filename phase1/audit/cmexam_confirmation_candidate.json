@@ -1,0 +1,48 @@
+{
+  "audited_additional_training_sources": {
+    "phase1/data/processed/cmexam/grpo_train.jsonl": 7974,
+    "phase1/data/processed/preference/train.jsonl": 1061,
+    "phase1/results/week19_distill/data/real_sft.jsonl": 2000,
+    "phase1/results/week20_distill/data/rs_both_sft.jsonl": 2000,
+    "phase1/results/week20_distill/data/rs_mcq_sft.jsonl": 2000,
+    "phase1/results/week20_distill/data/rs_teacher_sft.jsonl": 2000,
+    "phase1/results/week21_synthetic/data/replacement_50.jsonl": 2000
+  },
+  "created_at": "2026-08-28",
+  "excluded": {
+    "contaminated_test_question_overlap": 36,
+    "invalid_or_not_single_choice": 210,
+    "other_phase1_training_prompt_overlap": 0,
+    "train_question_overlap": 249,
+    "within_valid_duplicate": 10
+  },
+  "invariants": {
+    "duplicate_output_ids": 0,
+    "normalized_question_overlap_with_other_phase1_training": 0,
+    "normalized_question_overlap_with_test": 0,
+    "normalized_question_overlap_with_train": 0
+  },
+  "output": {
+    "path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+    "records": 6305,
+    "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e"
+  },
+  "reason_not_blind": [
+    "CMExam is a public benchmark",
+    "answer labels are locally accessible",
+    "no external evaluator or label custodian is configured"
+  ],
+  "schema_version": "1.0",
+  "selection_policy": "valid split only; single-choice; exclude normalized-question overlap with train and contaminated test; deduplicate valid; no model-output selection",
+  "source": {
+    "path": "phase1/data/processed/cmexam/valid.jsonl",
+    "records": 6810,
+    "sha256": "096171ed18bd32d0f344409109e5d25f2621b1e56c490c2f92efb029b69f0373"
+  },
+  "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND",
+  "use_policy": {
+    "allowed": "run only after candidate model, hyperparameters, seeds and analysis plan are frozen",
+    "forbidden": "use results to tune and rerun the same confirmation claim",
+    "research_exit": "does not replace an externally held blind test"
+  }
+}

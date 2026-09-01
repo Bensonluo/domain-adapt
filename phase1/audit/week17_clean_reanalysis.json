@@ -1,0 +1,99 @@
+{
+  "claim_disposition": {
+    "confirmation_status": "UNVERIFIED_SINGLE_SEED_DEVELOPMENT_DATA",
+    "historical_true_transfer_claim": "INVALIDATED",
+    "narrower_clean_point_direction": "PARTIALLY_IDENTIFIED_POSITIVE_IF_AGGREGATES_TRUSTED"
+  },
+  "created_at": "2026-08-28",
+  "evidence_gap": {
+    "cause": "Week 17 eval_cmexam.py intentionally persisted preds[:50] while aggregate metrics used all 500 rows.",
+    "missing_paired_prediction_rows_per_arm": 450,
+    "prohibited_inference": "Do not present the retained-prefix estimate or bounded full effect as a clean 500-question confirmation result.",
+    "status": "NON_RECOVERABLE_FROM_RETAINED_ARTIFACTS"
+  },
+  "full_500_clean_effect_partial_identification": {
+    "clean_accuracy_delta_bounds": [
+      0.006097560975609756,
+      0.03861788617886179
+    ],
+    "clean_n": 492,
+    "clean_treatment_minus_control_correct_count_bounds": [
+      3,
+      19
+    ],
+    "interpretation": "The positive point delta cannot be fully explained by the 8 overlapping rows if aggregate counts are trusted, but exact clean accuracy, CI and McNemar are unrecoverable without all paired predictions.",
+    "status": "BOUNDED_NOT_POINT_IDENTIFIED"
+  },
+  "historical_aggregate": {
+    "control_correct": 256,
+    "delta": 0.02200000000000002,
+    "n": 500,
+    "treatment_correct": 267
+  },
+  "inputs": {
+    "control_aggregate": {
+      "path": "phase1/results/week17_grpo/base_cmexam_holdout.json",
+      "sha256": "36955500b76818a87f40a634eda314ce035eb1b7661b4fb97fc7bbdc7f77c064"
+    },
+    "control_predictions": {
+      "path": "phase1/results/week17_grpo/base_cmexam_holdout.json.preds.jsonl",
+      "sha256": "e78f945bedf73083b97b0e44022b47177de55921e7802d952bfc6bfcfb656b11"
+    },
+    "holdout": {
+      "path": "phase1/data/processed/cmexam/holdout.jsonl",
+      "sha256": "bbeed1d863bcd573448e93f6b77fcc4b57f93ea2e08bcc98de94544af7417377"
+    },
+    "training": {
+      "path": "phase1/data/processed/cmexam/grpo_train.jsonl",
+      "sha256": "4df3e7b483b5af627bfcf0977d3f19c5fb55c4b9224face61b3b914f07fb5f96"
+    },
+    "treatment_aggregate": {
+      "path": "phase1/results/week17_grpo/mcq_base_fused/cmexam_holdout.json",
+      "sha256": "f76185617ec51933559c860b8068651a1149434ce9f3883b9030a020fe8f8408"
+    },
+    "treatment_predictions": {
+      "path": "phase1/results/week17_grpo/mcq_base_fused/cmexam_holdout.json.preds.jsonl",
+      "sha256": "a06545d1a8b99763bebe486f1e6192b47e7666301741d44444d906af5083e9c0"
+    }
+  },
+  "retained_prefix_reanalysis": {
+    "control_accuracy": 0.5306122448979592,
+    "control_correct": 26,
+    "delta": 0.08163265306122448,
+    "excluded_overlap_rows": 1,
+    "mcnemar_exact": {
+      "control_only_correct": 1,
+      "p_value": 0.21875,
+      "treatment_only_correct": 5
+    },
+    "n": 49,
+    "paired_bootstrap_95_ci": [
+      -0.02040816326530612,
+      0.1836734693877551
+    ],
+    "paired_bootstrap_samples": 10000,
+    "retained_predictions": 50,
+    "status": "EXPLORATORY_SAMPLE_ONLY",
+    "treatment_accuracy": 0.6122448979591837,
+    "treatment_correct": 30
+  },
+  "schema_version": "1.0",
+  "training_overlap": {
+    "normalization": "first prompt line; NFKC + casefold + collapsed whitespace",
+    "overlap_count": 8,
+    "overlap_indices_zero_based": [
+      33,
+      139,
+      142,
+      170,
+      403,
+      420,
+      439,
+      443
+    ],
+    "retained_sample_overlap_count": 1,
+    "retained_sample_overlap_indices_zero_based": [
+      33
+    ]
+  }
+}

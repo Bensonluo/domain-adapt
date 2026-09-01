@@ -1,12 +1,14 @@
 # Phase 0 评估报告
 
-> 数据来源: [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training) 项目 master_data 领域评估（2026-05-31）
-> 评估脚本: `domains/master_data/eval/evaluate.py`
-> 测试集: 800 条（institution 400 + product 400），与训练集零药品编码重叠
+> 数据来源: [4bit-QLoRA-post-training @ 9267c7c](https://github.com/luopeng/4bit-QLoRA-post-training/tree/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/master_data) 项目 master_data 领域评估（2026-05-31）
+> 评估脚本: [`domains/master_data/eval/evaluate.py`](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/master_data/eval/evaluate.py)
+> 评估集: 800 条（institution 400 + product 400）；这是独立 `master_data/Gemma 26B` 案例，不是 Week 6 `medical_entity/Qwen` 模型的后续评估
+
+> **2026-08-28 方法论纠错**：以下数值保留为历史观测，但旧评估集经过多轮迭代后应视为 dev。base 与 finetuned 的 runtime、temperature、max tokens 不完全一致，因此差异代表两条完整推理链路之差，不能全部归因于 LoRA/SFT。数据来自同源合成生成流程，真实业务外部效度尚未验证。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 ---
 
-## 1. Benchmark 评估 — Base vs Finetuned
+## 1. 任务内结构化评估 — Base vs Finetuned
 
 ### 任务说明
 
@@ -41,9 +43,9 @@ Product 额外指标: Grade Accuracy 98.6% → 99.7%（B 级 93.5% → 99.75%）
 | Avg Latency | 21.8s | 7.8s | **-64%** |
 
 **关键发现**：
-- 机构匹配提升最显著（+19%），验证了 SFT 在领域任务上的有效性
+- 机构匹配观测到 +19 个百分点，说明当前微调链路在该同源合成分布上有强提升信号；公平同链路重跑前不能隔离 SFT 的纯因果贡献
 - 解析失败从 10 降到 0：微调后模型输出格式更稳定
-- 推理延迟降低 64%：本地 MLX 推理 vs LM Studio API
+- 延迟观测不可直接比较：finetuned 使用本地 MLX，base 使用 LM Studio/API，且解码配置不同
 - Product Top-1 已达天花板（100%），但 B 级精度仍有提升空间
 
 ---
@@ -64,11 +66,7 @@ Product 额外指标: Grade Accuracy 98.6% → 99.7%（B 级 93.5% → 99.75%）
 | 8 | qwen3-30b | 30B | 72.0% | LM Studio baseline |
 | 9 | qwen3-8b | 8B | 62.0% | LM Studio baseline |
 
-**分析**：
-- 26B finetuned 模型超越所有更大模型（31B、35B）和商业云端 API
-- 证明 domain SFT 的 ROI 远大于单纯增大模型参数
-- 未微调的 26B baseline 排名第 5（79.38%），微调后直接跳到第 1（98.75%）
-- 最小的 qwen3-8b 仅 62%，说明任务本身有难度，不是所有模型都能做好
+**适用范围**：该表保留为描述性历史记录。原始运行混有不同样本量、runtime、prompt/解码链路，因此不能作为统一 benchmark，也不能证明稳定超越所有更大模型或商业 API。正式排行榜必须让所有模型运行同一完整 blind test，并固定 prompt、输出 schema 和解码参数；延迟需在相同硬件/服务条件下单独比较。
 
 ---
 
@@ -97,7 +95,7 @@ LLM-as-Judge 适用于 Phase 1 的开放域问答评估（如医疗咨询、用�
 即使使用结构化评估，仍需关注：
 - **解析 bias**: baseline 模型有 10 次 parse failure，finetuned 为 0 — 输出稳定性也是质量指标
 - **模型选择 bias**: 不同基座模型表现差异大（62% ~ 88%），说明模型选择本身影响巨大
-- **数据分布 bias**: 测试集按药品编码零泄漏划分，避免训练集污染
+- **数据分布 bias**: 已执行部分编码/query 层隔离，但仍需报告目标实体 code、normalized query、模板和候选集合四层 overlap；同一生成器产生的 train/test 不能概括为“零泄漏”
 
 ---
 
@@ -128,26 +126,28 @@ LoRA:
 ### 关键决策
 
 1. **Loss Masking**: `mask_prompt: true`，只在 assistant 的 JSON 匹配结果上计算 loss
-2. **LoRA rank=32**: 比 QLoRA 论文推荐的 r=8 大，因为匹配任务需要学习复杂的推理规则
-3. **7 个 target modules**: 覆盖注意力层 + FFN 层，比只训 q/v_proj 效果好
-4. **数据质量**: 6000 条精心构造的数据（含硬负采样 + 噪声注入）远优于 50K 条低质量数据
+2. **LoRA rank=32**: 当前配置选择了 rank=32；没有匹配条件的 r=8/16/32 消融，不能声称 rank=32 必要
+3. **7 个 target modules**: 当前配置覆盖注意力层 + FFN 层；是否优于只训 q/v 仍需参数预算匹配的消融
+4. **数据构造**: 6000 条数据包含硬负采样与噪声注入；没有 50K 低质量对照，不能得出“远优于 50K”的因果结论
 
 ---
 
 ## 5. 综合结论
 
-### Domain Adaptation 是否成功？ ✅ 是
+### 当前可以支持的结论
 
-- 机构匹配 Top-1 从 79.75% → 98.75%（+19%），超越所有商业 API
+- 在当时两条完整推理链路和同源合成评估上，机构匹配 Top-1 从 79.75% → 98.75%（+19 个百分点）
 - 药品匹配 B 级精度从 93.5% → 99.75%（+6.3%）
 - 模型输出格式稳定性提升（parse failure 10 → 0）
-- 本地推理延迟降低 64%（去掉 API 开销）
+- 两条链路的延迟观测不同，但因 runtime 与解码混杂，不归因于微调
+
+该结果支持“结构化合成匹配 POC 有强提升信号”，尚不支持真实业务外部效度、LoRA 单独因果贡献或统一跨模型领先。
 
 ### 意外发现
 
-1. **小数据大效果**: 6000 条数据足以让 26B 模型在特定任务上超越 35B 模型
-2. **rank=32 必要**: 匹配任务需要较大的 LoRA rank，r=8 不够（早期实验验证）
-3. **延迟反降**: 微调后模型输出更简洁（直接出 JSON），减少了解码步数
+1. **小数据强信号**: 6000 条构造数据在该 POC 分布上取得了明显提升；跨模型结论待统一协议验证
+2. **rank=32 是当前选择**: 必要性和 r=8 是否不足尚未验证
+3. **输出更稳定**: parse failure 下降是可复核观测；延迟原因需独立系统 benchmark 分解
 
 ### 下一步（Phase 1 方向）
 

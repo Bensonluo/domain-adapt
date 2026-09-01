@@ -2,6 +2,8 @@
 
 > 目标: 5 个核心推导,每个都从"已知"出发,一步步走到"结论"。
 > 预计时间: 10-14 小时
+>
+> **审查状态**：`DERIVATIONS_PRESENT / VALIDITY_PARTIAL`。五份推导文档存在；脱稿复述未验收，LoRA/SVD 经验部分已纠错。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾**: Week 6 你训练了完整的领域模型 — 全是工程实践。这周回到数学,因为工程做到一定程度后,瓶颈往往是"直觉不够"。推导的目的不是记住公式,而是建立直觉。
 >
@@ -110,18 +112,18 @@
 **Step 3: LoRA 为什么有效**
 - 关键假设: 预训练权重 W_0 已经编码了大部分知识
 - 微调只需要一个 "小修正" ΔW
-- 如果 W_0 的奇异值衰减快 → 低秩修正就够了
-- **检查点**: 在 lora.ipynb 中,rank=32 捕获了多少能量? 这和论文用 r=8 不矛盾吗? (提示: ΔW 不是 W,是修正量)
+- `W_0` 的谱与任务更新 `ΔW` 的谱是不同命题；低秩修正是否足够必须检查真实更新和下游 rank 消融
+- **检查点**: 为什么随机矩阵、W_0 和 full-FT 的真实 ΔW 是三个不同分析对象？Frobenius 能量为什么使用 `Σσ²`？
 
 **Step 4: alpha 的作用**
 - `scaling = alpha / rank`
 - 为什么不直接设 alpha = rank (scaling = 1)?
-- 好处: 调 rank 时不需要重新调 learning rate (alpha 固定)
+- 常见作用: alpha/rank 控制更新缩放；改变 rank 后仍应验证 learning rate 与 scaling 的组合
 - **直觉**: alpha 是 "LoRA 的总强度",rank 是 "LoRA 的自由度"
 
 ### 交付物
 - [ ] 手写推导照片 → `phase0/notes/week7_derivation_lora_svd.jpg`
-- [ ] 能回答 "rank=8 通常够用的数学直觉是什么"
+- [ ] 能回答“为什么低秩更新是经验假设，以及如何用真实 ΔW 与下游消融判断 rank 是否足够”
 
 ---
 
@@ -245,7 +247,7 @@ v̂_t = v_t / (1 - β2^t)                     # 偏差修正
 
 **推导 2: Softmax + Cross-Entropy 梯度** — 用两种方法（直接展开法、链式法则法）推导出 ∂L/∂z = p - y_onehot，即"概率减 one-hot = 预测误差"。附带 log-sum-exp 数值稳定性分析。见 [derivation_softmax_ce.md](derivation_softmax_ce.md)。
 
-**推导 3: LoRA 的 SVD 视角** — 从 SVD 分解和 Eckart-Young 定理出发，解释低秩假设的数学依据：预训练权重的奇异值衰减快，微调变化量 ΔW 的衰减更快，因此 r=8 通常足够。详解 alpha/rank 的解耦设计。见 [derivation_lora_svd.md](derivation_lora_svd.md)。
+**推导 3: LoRA 的 SVD 视角** — 从 SVD 和 Eckart-Young 定理说明如何衡量一个真实更新矩阵的低秩可近似性。当前材料不包含 Qwen 真实 ΔW 实证，也不能推出 r=8 普遍足够。见 [derivation_lora_svd.md](derivation_lora_svd.md)。
 
 **推导 4: DPO Loss** — 从 RLHF 的 KL 约束优化目标出发，经闭式解、反解 reward、Bradley-Terry 模型三步，消掉不可计算的配分函数 Z(x)，得到 DPO 闭式 loss。含梯度分析和代码实现。见 [derivation_dpo.md](derivation_dpo.md)。
 

@@ -2,8 +2,10 @@
 
 > 目标: 从论文数学到代码实现,彻底理解 LoRA 和 QLoRA。
 > 预计时间: 14-20 小时
+>
+> **审查状态**：`IMPLEMENTATION_DONE / SVD_CLAIM_INVALIDATED`。LoRA 实现与 toy 对比存在；真实 Qwen ΔW 能量结论已撤回。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 3 你做了全量微调 — 亲身体验了 1.5B 模型吃掉几十 GB 显存。这周学 LoRA: 只训练 0.1% 的参数,显存降到 1/10,效果几乎不差。
+> **上周回顾（原计划）**: Week 3 应通过全量微调观察显存成本；当前仓库只有脚本，没有可核验的实测日志。本周学习 LoRA 的参数效率，但具体显存和效果收益必须由匹配实验决定。
 >
 > **为什么学这周**: LoRA 是你未来所有训练实验的基础方法。你的方向是 domain adaptation — 需要频繁地在不同领域数据上微调模型,LoRA 让这件事在单卡 4090 上可行。不理解 LoRA 的数学原理(rank 选择、alpha 含义),就只能照抄别人的配置。
 >
@@ -18,7 +20,7 @@
 ### 做什么
 1. 精读 LoRA 论文 (Section 4 + Appendix)
 2. 手写推导: `W_new = W_0 + α/r * B @ A`
-3. 理解 SVD 视角: 预训练权重的变化矩阵 ΔW 是低秩的
+3. 理解 SVD 视角: LoRA 用低秩矩阵参数化任务更新 ΔW；更新的有效低秩性是经验假设，需要真实更新与下游消融验证
 4. 理解为什么只适配 attention 的 q/v (论文 Table 4 的 ablation)
 5. 理解 alpha 参数: `scaling = alpha / rank`
 
@@ -115,7 +117,7 @@ python phase0/week4/compare_lora.py
 - [x] LoRA + QLoRA 论文精读笔记
 - [x] 手写 LoRA 实现 (GitHub 提交)
 - [x] toy 对比实验记录 (手写 vs PEFT)
-- [x] SVD 视角 rank 选择推导
+- [ ] SVD 视角 rank 选择实证（当前只有随机矩阵教学演示）
 - [x] 自测题能回答 2/3 以上
 
 ---
@@ -130,6 +132,6 @@ python phase0/week4/compare_lora.py
 
 **手写 vs PEFT 对比实验** — [compare_lora.py](compare_lora.py) 对比手写 LoRA 和 PEFT 库 LoRA 在相同数据上的 loss 下降曲线，结果一致。见 [compare_lora.png](compare_lora.png)。
 
-**SVD 视角** — [lora.ipynb](lora.ipynb) 可视化预训练权重的奇异值衰减曲线，验证低秩假设：前 8-16 个奇异值捕获了绝大部分能量，rank=8 通常够用。
+**SVD 视角** — [lora.ipynb](lora.ipynb) 是随机矩阵上的 SVD 与低秩近似教学演示，不是 Qwen 权重或训练后 ΔW 的实证。rank 选择仍需对真实更新使用平方奇异值能量，并结合下游指标做受控消融。
 
 **PEFT 源码对比** — 阅读官方 `peft/tuners/lora/layer.py`，对比手写版的 3 个差异：多适配器支持、输入类型对齐、merge_and_unload 机制。见 [week4_peft_source_notes.md](../results/week4_peft_source_notes.md)。

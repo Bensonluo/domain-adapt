@@ -7,7 +7,7 @@
 
 ## 核心问题
 
-为什么 4-bit 量化 + LoRA 能和 16-bit 全量微调几乎没差异?
+4-bit 量化 + LoRA 在论文哪些模型、数据和评估设置下接近 16-bit 对照？哪些规模缺少同条件 full-FT 证据，不能外推为普遍等价？
 
 ---
 
@@ -37,11 +37,12 @@ TODO: 用自己的话解释
 
 ## 关键 Figure
 
-### Figure 1: QLoRA vs 16-bit FT
+### Figure 1：方法与内存可行性，不是普遍 full-FT 等价证明
 
 TODO: 记录你看到的结论
-- [ ] 哪些 benchmark 上 QLoRA 和 16-bit FT 差距 < 1%?
-- [ ] 哪些 benchmark 差距稍大? 为什么?
+- [ ] Figure 1 实际表达了哪些组件和内存主张？
+- [ ] 性能数字分别来自哪些表、模型规模和 baseline？
+- [ ] 33B/65B 上是否存在同条件 16-bit full FT 对照？若没有，明确写“未验证”。
 
 ---
 
@@ -53,7 +54,7 @@ TODO: 记录你看到的结论
 | LoRA (16-bit) | 2B × 2 | ? | ? | ? |
 | QLoRA | ? | ? | ? | ? |
 
-TODO: 填完上表,理解 QLoRA 为什么能在单卡 48GB 上微调 65B 模型。
+TODO: 填表时同时记录序列长度、batch、激活、checkpointing、临时 buffer 和 kernel；不能把参数字节数之和当作实测峰值。用论文设置解释 65B/48GB 可行性，不外推固定显存比例。
 
 ---
 

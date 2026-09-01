@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "phase": "phase1",
+  "phase_status": "REMEDIATION_REQUIRED",
+  "updated_at": "2026-08-28",
+  "evaluation_policy": {
+    "development_benchmarks": [
+      "phase1/data/processed/cmexam/holdout.jsonl",
+      "CMMLU subsets repeatedly used in Week 12-21"
+    ],
+    "confirmation_candidate": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+    "confirmation_candidate_status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND",
+    "benchmark_registry": "phase1/audit/benchmark_registry.json",
+    "external_blind_test": null,
+    "external_blind_test_status": "REQUIRED_NOT_AVAILABLE"
+  },
+  "artifacts": [
+    {
+      "module": "cpt_ratio_sweep",
+      "claim_ids": ["P1-C02", "P1-C03"],
+      "summary": "phase1/results/week12_lora_cpt/sweep_summary.json",
+      "evidence_status": "PARTIAL",
+      "limitations": ["single_seed", "development_set_selection", "causal_confounding"]
+    },
+    {
+      "module": "dpo_beta_sweep",
+      "claim_ids": ["P1-C04", "P1-C05"],
+      "summary": "phase1/results/week15_dpo/sweep_summary.json",
+      "evidence_status": "PRESENT",
+      "limitations": ["single_seed", "matched_bucket_n_13", "historical_prompt_group_overlap_50"]
+    },
+    {
+      "module": "dpo_ipo_failure_modes",
+      "claim_ids": ["P1-C06"],
+      "summary": "phase1/results/week16_failmode/failure_summary.json",
+      "evidence_status": "PRESENT",
+      "limitations": ["single_seed", "objective_aligned_metric"]
+    },
+    {
+      "module": "grpo",
+      "claim_ids": ["P1-C07"],
+      "summary": "phase1/results/week17_grpo/grpo_summary.json",
+      "clean_reanalysis": "phase1/audit/week17_clean_reanalysis.json",
+      "evidence_status": "INVALIDATED_PART",
+      "limitations": ["single_seed", "8_of_500_eval_questions_in_grpo_train", "450_of_500_paired_predictions_not_retained", "clean_full_effect_bounded_not_point_identified", "reused_cmexam_development_set", "limited_reward_hacking_probes"]
+    },
+    {
+      "module": "response_distillation",
+      "claim_ids": ["P1-C08", "P1-C09"],
+      "summary": "phase1/results/week19_distill/distill_summary.json",
+      "evidence_status": "PRESENT",
+      "limitations": ["single_seed", "completion_source_confounding"]
+    },
+    {
+      "module": "logit_kd_and_rejection_sampling",
+      "claim_ids": ["P1-C09", "P1-C10", "P1-C11"],
+      "summary": "phase1/results/week20_distill/week20_summary.json",
+      "lineage": "phase1/week20/week20_lineage.json",
+      "evidence_status": "REPRODUCIBLE_PART",
+      "limitations": ["single_seed", "multiple_comparisons", "reused_development_set"]
+    },
+    {
+      "module": "synthetic_replacement",
+      "claim_ids": ["P1-C12", "P1-C13"],
+      "summary": "phase1/results/week21_synthetic/week21_summary.json",
+      "lineage": "phase1/results/week21_synthetic/artifact_lineage.json",
+      "evidence_status": "REPRODUCIBLE_PART",
+      "limitations": ["noninferiority_not_established", "old_rng_run", "ai_nonclinician_review", "overlap_records_12"]
+    },
+    {
+      "module": "synthetic_clean_confirmation_data",
+      "claim_ids": ["P1-C12"],
+      "audit": "phase1/audit/week21_clean_replacement_audit.json",
+      "control": {
+        "path": "phase1/data/processed/confirmation/week21_control_real_clean_v1.jsonl",
+        "sha256": "906753a724916511e7206042fa6a8e0a0fe1b2c9bdcb2e77ee2f5b59407332aa"
+      },
+      "treatment": {
+        "path": "phase1/data/processed/confirmation/week21_treatment_synthetic50_clean_v1.jsonl",
+        "sha256": "3a3b15a0ae86996ff327f8fa16b4f3d0e3294ca88a3ab460fe03e52ff35f8cef"
+      },
+      "evidence_status": "READY_FOR_CONFIRMATION_RUN",
+      "limitations": ["training_not_rerun", "external_blind_test_required_not_available"]
+    },
+    {
+      "module": "core_confirmation_specifications",
+      "specifications": [
+        "phase1/confirmation/cpt.json",
+        "phase1/confirmation/dpo_ipo.json",
+        "phase1/confirmation/grpo.json",
+        "phase1/confirmation/distillation.json",
+        "phase1/confirmation/synthetic_replacement.json"
+      ],
+      "validator": "phase1/confirmation/validate_specs.py",
+      "evidence_status": "FROZEN_BEFORE_EXECUTION",
+      "limitations": ["confirmation_runs_not_executed", "external_blind_test_required_not_available"]
+    },
+    {
+      "module": "local_remediation_completion_review",
+      "audit": "phase1/audit/completion-review.md",
+      "validator": "phase1/audit/run_all.sh",
+      "evidence_status": "LOCALLY_VERIFIED",
+      "limitations": ["phase_status_remains_remediation_required", "confirmation_runs_not_executed", "external_blind_test_required_not_available"]
+    }
+  ]
+}

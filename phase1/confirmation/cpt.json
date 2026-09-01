@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "spec_id": "P1-CONF-CPT-v1",
+  "method": "cpt",
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "frozen_at": "2026-08-28",
+  "claim": {
+    "hypothesis": "Estimand A 检验固定 LoRA 模式下 CPT exposure 相对 no-CPT 的收益；Estimand B 检验相同 CPT exposure 和优化 token 预算下 LoRA 与 full adaptation mode 的差异。",
+    "allowed_wording_if_supported": "分别报告 CPT exposure 效应和匹配 exposure 下的 adaptation-mode 效应；结论限于本地确认候选，外部验证仍待完成。",
+    "wording_if_rejected": "分别说明哪一个预注册 estimand 未获支持，不用另一 estimand 的结果替代。",
+    "wording_if_inconclusive": "结果不确定，不合并两个 estimand，也不宣称 LoRA/full 的普适优劣。"
+  },
+  "seeds": [101, 202, 303],
+  "base_model": {
+    "id": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+  },
+  "comparison": {
+    "estimands": [
+      {
+        "id": "cpt_exposure",
+        "control": "no_cpt_base_checkpoint",
+        "treatment": "lora_cpt",
+        "treatment_variable": "cpt_exposure",
+        "fixed_controls": ["base_model_revision", "tokenizer", "adaptation_mode_for_treatment", "evaluation_prompts", "generation_config"],
+        "note": "No-CPT has zero optimization tokens by definition; optimization budget is not claimed as a fixed control for this estimand."
+      },
+      {
+        "id": "adaptation_mode",
+        "control": "lora_cpt",
+        "treatment": "full_cpt_verified_trainable_scope",
+        "treatment_variable": "adaptation_mode",
+        "fixed_controls": ["base_model_revision", "tokenizer", "training_rows", "row_order_by_seed", "optimizer", "learning_rate", "optimization_tokens", "evaluation_prompts"]
+      }
+    ]
+  },
+  "data": {
+    "training": [{"path": "phase1/data/processed/cpt_mlx/50_50/train.jsonl", "sha256": "15a64f646a7defd84faceb8752cac99140e2d8edf3744eadbe1e92ee8e073366"}],
+    "development": {"id": "cmmlu_local_all", "sha256": "7eb87616fa446bee45a8c0754f3c1faf3b6ca33f35ac740311d25013ebd889ba", "role": "regression_monitor_only"},
+    "confirmation": {"path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl", "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e", "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND", "is_blind": false}
+  },
+  "analysis": {
+    "primary_metric": "two_prespecified_paired_cmexam_accuracy_deltas_by_estimand",
+    "secondary_metrics": ["cmmlu_macro_accuracy_delta", "domain_validation_loss"],
+    "paired_bootstrap_samples": 10000,
+    "mcnemar": true,
+    "decision_rule": "report seed-level effects and aggregate CI; no winner claim from point estimate alone",
+    "multiple_comparison_policy": "Holm correction across the two prespecified estimands"
+  },
+  "training_recipe": {
+    "framework": "mlx-lm",
+    "optimizer": "adamw",
+    "learning_rate": 0.00001,
+    "micro_batch_size": 1,
+    "gradient_accumulation_steps": 1,
+    "max_sequence_length": 2048,
+    "optimization_token_budget": 14000000,
+    "stopping_rule": "stop at the shared optimization-token budget; no validation-selected early stopping",
+    "lora": {"rank": 16, "alpha": 32, "dropout": 0.05},
+    "full_scope_rule": "all trainable parameter names and count must be exported before training"
+  },
+  "method_specific": {"optimization_token_budget": 14000000, "verify_trainable_parameter_names_before_run": true},
+  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+}

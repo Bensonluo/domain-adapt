@@ -1,0 +1,91 @@
+{
+  "composition": {
+    "control": {
+      "real": 2000
+    },
+    "control_label_distribution": {
+      "A": 374,
+      "B": 651,
+      "C": 455,
+      "D": 293,
+      "E": 227
+    },
+    "treatment": {
+      "real": 1000,
+      "synthetic": 1000
+    },
+    "treatment_label_distribution": {
+      "A": 374,
+      "B": 651,
+      "C": 455,
+      "D": 293,
+      "E": 227
+    }
+  },
+  "created_at": "2026-08-28",
+  "filtering": {
+    "max_similarity_seen_real": 1.0,
+    "max_similarity_seen_synthetic": 0.29411764705882354,
+    "real_rejected": {
+      "confirmation_similarity": 36,
+      "duplicate_question": 8
+    },
+    "synthetic_rejected": {}
+  },
+  "inputs": {
+    "confirmation": {
+      "path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+      "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e"
+    },
+    "real_raw": {
+      "path": "phase1/data/processed/cmexam/train.jsonl",
+      "sha256": "01f47e773f6fe46569b306995c9e68cb832f402d46208f1d5a510f79b5ef8f3b"
+    },
+    "synthetic": {
+      "phase1/results/week21_synthetic/data/evol_instruct.jsonl": "c9c7d224a319fc8209188a1eb06b831753cc27b28c660235de0d7158f096a324",
+      "phase1/results/week21_synthetic/data/self_instruct.jsonl": "4af51928c47eed622d33f54c494ed43d9cb3b57580e57638ff6653aa87a54e42"
+    }
+  },
+  "invariants": {
+    "completion_budget_relative_difference_le_1pct": true,
+    "control_prohibited_overlap": 0,
+    "control_unique_questions": true,
+    "equal_arm_records": true,
+    "equal_label_distribution": true,
+    "equal_slot_ids": true,
+    "treatment_prohibited_overlap": 0,
+    "treatment_unique_questions": true
+  },
+  "matching": {
+    "completion_budget_relative_difference": 0.008591145641964339,
+    "control_completion_budget": 299378,
+    "control_total_characters": 566942,
+    "match_unit": "completion_tokens",
+    "max_match_unit_difference": 91,
+    "mean_match_unit_difference": 7.44,
+    "replacement_pairs": 1000,
+    "tokenizer": "phase1/results/week12_lora_cpt/50_50_fused",
+    "total_character_relative_difference": 0.07495122957903984,
+    "treatment_completion_budget": 301950,
+    "treatment_total_characters": 609435
+  },
+  "n_total_per_arm": 2000,
+  "outputs": {
+    "control": {
+      "path": "phase1/data/processed/confirmation/week21_control_real_clean_v1.jsonl",
+      "records": 2000,
+      "sha256": "906753a724916511e7206042fa6a8e0a0fe1b2c9bdcb2e77ee2f5b59407332aa"
+    },
+    "treatment": {
+      "path": "phase1/data/processed/confirmation/week21_treatment_synthetic50_clean_v1.jsonl",
+      "records": 2000,
+      "sha256": "3a3b15a0ae86996ff327f8fa16b4f3d0e3294ca88a3ab460fe03e52ff35f8cef"
+    }
+  },
+  "policy": "nested matched control; source+label+nearest-completion-budget replacement; reject confirmation 3-gram Jaccard >= threshold",
+  "remaining_requirement": "Freeze equal-step, same-batch and completion-only-loss training config in the confirmation manifest.",
+  "schema_version": "1.0",
+  "seed": 123,
+  "similarity_threshold": 0.78,
+  "synthetic_fraction": 0.5
+}

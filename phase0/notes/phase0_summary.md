@@ -1,150 +1,105 @@
 # Phase 0 总结：LLM Domain Adaptation 基础
 
-> 2026-05 完成，历时 8 周
+> 2026-05 完成 8 周学习执行；2026-08-28 方法论复审
+>
+> 当前状态：`REMEDIATION_REQUIRED`。学习性主体完成，研究性验收未通过。
 
----
+阶段状态以 [Phase 0 状态页](../README.md) 为唯一来源；错误形成原因保存在每周 `CORRECTIONS.md`。
 
-## 学习路径回顾
+## 准确结论
 
-### Week 1-2: PyTorch + Transformer 基础
+Phase 0 已建立 Transformer、训练循环、LoRA/QLoRA、SFT 数据目标和结构化评估的基础理解，并完成一个外部结构化匹配 POC。
 
-**核心收获**: 从零理解 autograd 和 attention 机制
+当前最强但仍受范围限制的结果是：
 
-- 手写 `backward_manual` 并与 `autograd` 结果对比，理解计算图和梯度传播
-- 手写 Multi-Head Attention、LayerNorm、完整 Transformer block
-- 理解 Pre-LN vs Post-LN、因果掩码、位置编码
-- 关键文件: `phase0/week1/day5_7_transformer.py`
+> 在同源合成的机构匹配评估上，“Gemma 26B 微调模型 + 当时 MLX 推理链路”相对“基座模型 + 当时 LM Studio 链路”观察到 Top-1 79.75%→98.75%。
 
-**能力建立**: 能在白板上画出 Transformer 的完整数据流和 shape 变化
+该观测值不等于 LoRA/SFT 的纯因果贡献，也不能直接外推到真实医疗业务、统一条件的跨模型排名或推理延迟收益。对应声明边界见 [claim-evidence matrix](../audit/claim-evidence-matrix.md)。
 
----
+## 学习路径与证据状态
 
-### Week 3: nanoGPT 训练
+### Week 1：PyTorch + Transformer 基础
 
-**核心收获**: 理解完整的 LLM 训练循环
+- 手写 autograd、attention、Transformer block 和 toy 训练。
+- 代码、loss 图、sample 和 checkpoint 存在。
+- 梯度/一致性测试输出、lm-eval 基线和脱稿能力证据未统一留存。
 
-- 从 Andrej Karpathy 的 nanoGPT 出发，理解 tokenization、训练循环、LR schedule
-- 手动调超参（learning rate、batch size、gradient clipping）观察 loss 曲线变化
-- 理解 perplexity = exp(loss) 的含义
+状态：`PARTIAL`。
 
-**能力建立**: 能独立搭建一个可运行的训练循环
+### Week 2：nanoGPT 训练
 
----
+- 完成训练脚本、不同 temperature 样例和训练 takeaways。
+- 原总结曾误写为 Week 3，现已纠正。
 
-### Week 4: LoRA 深度理解
+状态：`MOSTLY_DONE / EVIDENCE_PARTIAL`。
 
-**核心收获**: 从数学（SVD）到工程（PEFT 源码）完整掌握 LoRA
+### Week 3：HuggingFace 源码 + 全量微调
 
-- 手写 LoRA from scratch：`W = W_0 + (α/r) × B × A`
-- SVD 视角：分析 Qwen2.5-3B 权重的奇异值衰减，验证低秩假设
-- QLoRA 三大技术：NF4 量化 + Double Quantization + Paged Optimizer
-- 关键文件: `phase0/week4/lora_from_scratch.py`
+- HF/nanoGPT、Trainer 对比材料和 full-FT 脚本存在。
+- 没有 full-FT 运行日志、峰值显存、硬件/时间和 loss 曲线，不能声称已经亲身完成全量微调实验。
 
-**能力建立**: 能解释 LoRA 为什么有效（ΔW 的秩远低于 W_0），能选择 rank/alpha/target_modules
+状态：`PARTIAL`。
 
----
+### Week 4：LoRA / QLoRA
 
-### Week 5: SFT 细节
+- 手写 LoRA、PEFT 对比和论文笔记存在。
+- `lora.ipynb` 是随机矩阵 SVD 教学演示，不是 Qwen2.5-3B 或真实训练 ΔW 分析。
+- LoRA 的经验动机是任务更新具有较低内在维度，不要求预训练权重 W_0 本身低秩。
+- rank 8/16/32 的适用性尚未由本项目受控实验验证。
 
-**核心收获**: 理解 SFT 的每个组件 — template、masking、数据质量
+状态：`IMPLEMENTATION_DONE / SVD_CLAIM_INVALIDATED`。
 
-- Chat Template 对比：Qwen/ChatML、Llama-3、Mistral 三种格式的差异
-- Loss Masking 手写实现：`mask_labels` 函数，只在 assistant 回复上计算 loss
-- 完整 SFT 训练脚本：整合 template + masking + QLoRA
-- SFT Checklist：LR 2e-4（QLoRA）、1-3 epochs、rank 8-16
-- 关键文件: `phase0/week5/loss_masking.py`
+### Week 5：Chat Template + Loss Masking
 
-**能力建立**: 能诊断 SFT 训练中的常见 bug（如 loss 正常但模型重复 prompt）
+- 完成 template tokenization 对比、masking 标签实现和 SFT 脚本。
+- 已修正训练目标：assistant 内容及 turn-ending token 参与 loss；marker 缺失时 fail-closed。
+- 尚未完成 masking vs unmasked 的模型效果对照。
+- 原“质量 > 数量”设计同时改变质量、数量和 token budget，且无结果报告，结论已撤回。
 
----
+状态：`PARTIAL`。
 
-### Week 6: 完整领域模型训练
+### Week 6：领域 SFT 替代案例
 
-**核心收获**: 端到端训练一个可用的领域模型
+外部 `4bit-QLoRA-post-training/medical_entity` 提供了药品实体匹配数据、训练和结构化评估案例。这是有价值的替代性交付，但没有等价完成原计划的开放式领域 SFT 与人工评估。
 
-- 实战项目: [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training)
-- 数据：从 14K+ 药品知识库生成 58K+ 训练样本，含硬负采样和噪声注入
-- 训练：7 个预设（Mac 64GB MLX + GPU），覆盖 1.7B 到 14B 模型
-- 评估：分难度 accuracy 对比，10+ 轮迭代
-- 关键文件: `4bit-QLoRA/domains/master_data/scripts/train.py`
+状态：`EXTERNAL_SUBSTITUTE / PARTIAL`。
 
-**能力建立**: 能独立完成"数据准备 → 训练 → 评估 → 迭代"的完整闭环
+### Week 7：数学推导
 
----
+attention、softmax+CE、LoRA/SVD、DPO 和 AdamW 五份推导文档存在。文档完成与白板脱稿复述能力是两种证据；后者尚未正式验收。LoRA/SVD 中不存在的 Qwen ΔW 数字和过强 rank 结论已撤回。
 
-### Week 7: 数学推导密集周
+状态：`DERIVATIONS_PRESENT / VALIDITY_PARTIAL`。
 
-**核心收获**: 建立 LLM 训练核心数学的直觉
+### Week 8：评估方法论
 
-5 个推导全部完成：
+- 完成独立 `master_data/Gemma 26B` 案例的结构化 ground-truth 评估。
+- LLM-as-Judge 只有原型代码；没有运行结果或 judge 校准。
+- 人工 rubric 是模板；没有盲化评分和 IAA。
+- `master_data` 不是 Week 6 `medical_entity` 模型的后续评估，两个案例不能合并成同一闭环。
 
-1. **Self-Attention 反向传播**: ∂L/∂V, ∂L/∂S, ∂L/∂Q, ∂L/∂K；理解 √d_k 缩放的数学依据
-2. **Softmax + CE 梯度**: ∂L/∂z = p - y_onehot（概率减 one-hot = 预测误差）
-3. **LoRA SVD 视角**: Eckart-Young 定理、能量捕获比、alpha/rank 解耦设计
-4. **DPO Loss**: 从 RLHF 目标 → 闭式解 → 反解 reward → Bradley-Terry → 消掉 Z(x)
-5. **AdamW 更新规则**: 解耦 weight decay，decay 不经过 m/v 直接作用于参数
+状态：`STRUCTURED_EVAL_PRESENT / FULL_EVAL_INCOMPLETE`。
 
-**能力建立**: 推导不用记住，但需要理解"结果为什么长这样"
+## 两个外部案例必须分开
 
----
-
-### Week 8: 评估方法论
-
-**核心收获**: 建立三层评估体系
-
-1. **Benchmark 评估**: lm-evaluation-harness，检测灾难性遗忘
-2. **结构化评估**: 自动化 Top-1 accuracy + F1 + grade accuracy
-3. **跨模型对比**: 9 个模型的排行榜，验证 SFT 的 ROI
-
-关键结论：26B finetuned 模型在领域任务上超越 35B baseline 和商业云端 API
-
----
-
-## 实战项目成果
-
-### [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training)
-
-| 维度 | 成果 |
-|------|------|
-| **数据** | 14K 药品知识库 → 58K+ 训练样本（硬负采样 + 噪声注入 + 零泄漏划分） |
-| **训练** | 7 个模型预设，Mac MLX + GPU 双路径，MLflow + TensorBoard 追踪 |
-| **评估** | 74 次评估记录，9 个模型排行榜，分难度分析 |
-| **核心结果** | gemma-4-26b Institution Top-1: 79.75% → **98.75%** (+19%) |
-| **工程** | 完整的 CLI 工具链 + Streamlit dashboard + LoRA merge 脚本 |
-
----
+| 案例 | 模型/任务 | 能证明什么 | 不能证明什么 |
+|---|---|---|---|
+| `medical_entity` | Qwen 系列、药品实体匹配 | 完成过真实的数据→SFT→结构化评估工程流程 | 原计划开放式医疗问答能力和人工评估 |
+| `master_data` | Gemma 26B、机构/产品匹配 | 在当时同源合成评估和两条完整推理链路间观察到强提升 | LoRA 单独因果贡献、真实业务外部效度、统一跨模型排名和延迟收益 |
 
 ## 已建立的能力
 
-- ✅ Transformer 架构理解（能读源码、能调 shape）
-- ✅ LoRA/QLoRA 实战（能手写、能调参、能解释为什么有效）
-- ✅ SFT 全流程（数据 → template → masking → 训练 → 评估）
-- ✅ 评估方法论（benchmark + 结构化评估 + 跨模型对比）
-- ✅ Mac 本地 MLX 训练 + GPU QLoRA 训练
-- ✅ 数学直觉（attention 梯度、DPO、AdamW 的"为什么"）
+- Transformer 与训练循环：有代码证据，行为验收部分缺失。
+- LoRA/QLoRA：实现和论文理解已建立；rank/SVD 经验结论待验证。
+- SFT：template、masking 和训练脚本已建立；关键消融待补。
+- 结构化领域 POC：已建立，但主要是同源合成分布。
+- 评估：结构化自动评估已实践；开放式 judge、人类评估和 IAA 尚未闭环。
 
-## 仍需加强的领域
+## 进入正式验收前的最小工作
 
-详见 [knowledge_graph.md](../week8/knowledge_graph.md) 的 Gap 清单：
-1. DPO/RLHF 实战（推导懂了，没跑过）
-2. 分布式训练（DeepSpeed/FSDP）
-3. 开放域评估（LLM-as-Judge + 人工 IAA）
-4. 数据工程自动化（质量监控、难度分级）
+1. 同 runtime、量化、prompt、解码条件重跑 base vs adapter，并使用新 blind test。
+2. 完成 masking 三组消融和质量/数量解耦实验，至少 3 个 seed。
+3. 用 full-FT 的真实 ΔW 做多层 SVD，并与 rank 消融连接。
+4. 保存逐题预测，报告 paired CI/McNemar；旧的反复使用测试集降级为 dev。
+5. 若仍声称覆盖开放式领域能力，补盲化人工双评审与 IAA；LLM judge 仅作补充。
 
----
-
-## Phase 1 切入点
-
-### 方向 A: DPO 偏好优化（推荐优先）
-- 用匹配结果构造偏好对（正确 vs 错误），跑 DPO 训练
-- 已有代码框架: `4bit-QLoRA/config/dpo.py`
-- 预期: 提升置信度校准，减少"高置信度但错误"的 case
-
-### 方向 B: 多领域扩展
-- 从主数据匹配扩展到药品相互作用、处方审核等场景
-- 验证 SFT 方法论的可迁移性
-
-### 方向 C: 生产部署
-- MLX → vLLM / TGI 部署
-- 量化生产环境的延迟和吞吐量需求
-- 建立持续评估 pipeline
+详细协议见 [最小重跑计划](../audit/rerun-plan.md) 和 [退出门槛](../audit/exit-gate.md)。

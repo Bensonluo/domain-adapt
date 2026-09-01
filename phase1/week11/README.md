@@ -1,5 +1,7 @@
 # Week 11：CPT 实验（上）
 
+> 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。本周 run 只作为 demo/链路证据；“全量”指 MLX full 模式和全部 transformer layers，不等同于全部模型参数可训练。
+
 > 目标: 在 Qwen3.5-0.8B base model 上跑第一次 CPT，监控训练过程。
 > 预计时间: 8-12 小时
 > 框架: **Apple MLX (mlx-lm)** — 适配 M3 Max，比 transformers+torch 在 Mac 上快很多、内存省
@@ -44,7 +46,7 @@ python phase1/week10/data_prep_cpt.py   # 产出 cpt_70-30.jsonl 等
 ### 2. 训练
 
 ```bash
-# 基础全量 CPT（默认 70-30 配比, 200 iters 验证流程）:
+# MLX full 模式 CPT demo（默认 70-30 配比, 200 iters 验证流程）:
 python phase1/week11/train_cpt.py
 
 # 实时 matplotlib 窗口（本地零登录, 推荐）:
@@ -69,7 +71,7 @@ model: Qwen/Qwen3.5-0.8B          # 全量 CPT 必须非量化原版
 fine_tune_type: full              # full=全量CPT / lora=LoRA-CPT
 num_layers: -1                    # -1=解冻所有层（真全量）; 默认16只解冻最后16层
 iters: 200                        # demo 200; 真实训练 1万+
-learning_rate: 1.0e-5             # CPT 比预训练小 10-100 倍
+learning_rate: 1.0e-5             # 本次保守起点；不作为通用倍率规律
 batch_size: 4
 max_seq_length: 2048              # 匹配 week10 chunk
 grad_checkpoint: true             # 省内存（慢约 20-30%）
@@ -139,7 +141,7 @@ prompt「患者男性，54 岁，主诉胸痛」→ 模型吐出「42 岁持续�
 ### 3. 三个 insight
 
 1. **CPT 改 form，不改 fact**。模型学会"用医疗的腔调说话"，但教不会"说对的医疗话"——后者要靠**真实、足量、准确**的数据。16 条 fake-tokenizer demo 数据只能验证流程、传不了知识。
-2. **小数据全量 CPT 过拟合极快**。仅 ~3 个 epoch（iter 50）val 就见底。全量 CPT + 小数据 = 高方差，早停 / 正则 / 更大数据缺一不可。
+2. **小数据下该 MLX full-mode demo 的验证 loss 很快见底**。但验证集仅 1 条，不能稳定估计“过拟合速度”；它只提示正式实验需要更大验证集、早停和重复运行。
 3. **CPT loss 曲线的读法**（呼应思考锚点）：CPT 对纯 text 的**每个 token** 算 loss，曲线反映"领域分布的拟合程度"；过拟合的标志不是 loss 高，而是 **train 继续降、val 反弹**的分叉——这是 CPT（续训全 token）区别于 SFT（只算 completion）的监控要点。
 
 ---
@@ -153,7 +155,7 @@ A: 降 `--batch-size 2`、加 `--grad-accum 4`、确认 `--grad-checkpoint` 开�
 A: 全量 CPT 跑不动，走 LoRA-CPT + 量化模型 `mlx-community/Qwen3.5-3B-4bit`。
 
 **Q: `num_layers` 默认 16 是什么意思？**
-A: mlx-lm 的 `full` 模式下，`num_layers` 控制"解冻最后 N 层"，默认 16。要真正的全量 CPT 必须设 `-1`（train_cpt.py 默认就是 -1）。
+A: mlx-lm 的 `full` 模式下，`num_layers=-1` 会解冻全部 transformer layers；当前 run 记录的 trainable 参数约 66%，因此不能称全部模型参数都参与训练。正式命名以实际 trainable parameter 清单为准。
 
 **Q: demo 数据的 text 开头怎么有乱码（`��素为主`）？**
 A: week10 用 FakeTokenizer（UTF-8 字节级）切 chunk 时，chunk 边界可能切在多字节中文字符中间，`decode` 出来开头出现替换字符。**这只影响 demo 数据**（验证流程用）。真实训练前用真实 Qwen tokenizer 重跑 week10（`--tokenizer Qwen/Qwen3.5-0.8B`），BPE 的 decode 对任意 token 子集都合法，text 会正常。

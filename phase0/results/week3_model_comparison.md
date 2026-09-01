@@ -81,7 +81,7 @@ class LlamaMLP(nn.Module):
     # x → gate(D → D') * up(D → D') → SiLU → down(D' → D)
 ```
 
-结论：SwiGLU 比 GELU 多一个 gate 投影（参数量多 ~50%），但效果更好，LLaMA 论文证明的。
+结论：SwiGLU 比 GELU 多一个 gate 投影，参数量与计算结构也不同。LLaMA 采用了 SwiGLU，但本对比没有隔离激活函数、宽度和训练配置，不能据此单独证明 SwiGLU 必然更好。
 
 ### 5. 归一化
 

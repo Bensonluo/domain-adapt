@@ -1,0 +1,25 @@
+{
+  "counts": {
+    "empty_explanation": 100,
+    "format_only": 100,
+    "incorrect_explanation_with_correct_label": 100,
+    "label_prior_only": 500,
+    "unparseable_output": 1
+  },
+  "created_at": "2026-08-29",
+  "input": {
+    "path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+    "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e"
+  },
+  "output": {
+    "path": "phase1/confirmation/fixtures/grpo_probes_v1.jsonl",
+    "records": 801,
+    "sha256": "ea74be7cb5f2158d17b97271e6006a6497dbcf6668d96bb899cdf4c8788da32c"
+  },
+  "parameters": {
+    "candidate_per_label": 20,
+    "label_prior_per_label": 100
+  },
+  "schema_version": "1.0",
+  "selection": "sort confirmation rows by immutable id within answer label; take fixed prefix"
+}

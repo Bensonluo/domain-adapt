@@ -49,6 +49,7 @@ outputs/
 # IDE
 .vscode/
 .idea/
+.zcode/
 *.swp
 *.swo
 

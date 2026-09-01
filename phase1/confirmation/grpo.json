@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "spec_id": "P1-CONF-GRPO-v1",
+  "method": "grpo",
+  "status": "FROZEN_BEFORE_EXECUTION",
+  "frozen_at": "2026-08-28",
+  "claim": {
+    "hypothesis": "GRPO 在零训练题重叠的确认候选上改善任务准确率，并且收益不能由格式或标签先验投机解释。",
+    "allowed_wording_if_supported": "在零已知训练重叠的本地确认候选和三个 seed 上，GRPO 相对匹配 base 有可重复任务增益，已排除所列 reward-hacking probes；外部验证仍待完成。",
+    "wording_if_rejected": "该受控配置不支持 GRPO 的独立任务迁移收益。",
+    "wording_if_inconclusive": "结果不确定，只报告训练 reward 和具体 probe 结果，不作迁移或无 hacking 的总括声明。"
+  },
+  "seeds": [101, 202, 303],
+  "base_model": {
+    "id": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "config": {"path": "phase1/results/week12_lora_cpt/50_50_fused/config.json", "sha256": "41eb9baa243fc92dadd6ac800e1c073efcbc1cee198e360de07470420b7ef0a6"},
+    "weights": {"path": "phase1/results/week12_lora_cpt/50_50_fused/model.safetensors", "sha256": "0e724879f65e1e37775dcbd548b5241606333b8bf844994fea4fe3de4c42ae26", "size_bytes": 3441185441}
+  },
+  "comparison": {
+    "control": "matched_pre_grpo_base",
+    "treatments": ["grpo_fixed_config"],
+    "treatment_variable": "grpo_training",
+    "fixed_controls": ["base_model_revision", "training_rows", "optimizer", "training_steps", "generation_config", "evaluation_prompts"]
+  },
+  "data": {
+    "training": [{"path": "phase1/data/processed/cmexam/grpo_train.jsonl", "sha256": "4df3e7b483b5af627bfcf0977d3f19c5fb55c4b9224face61b3b914f07fb5f96"}],
+    "development": {"id": "cmexam_test_and_historical_500", "sha256": "bbeed1d863bcd573448e93f6b77fcc4b57f93ea2e08bcc98de94544af7417377", "role": "historical_development_only"},
+    "confirmation": {"path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl", "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e", "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND", "is_blind": false}
+  },
+  "analysis": {
+    "primary_metric": "paired_cmexam_accuracy_delta_vs_base",
+    "secondary_metrics": ["calibration_ece", "format_validity", "explanation_consistency"],
+    "paired_bootstrap_samples": 10000,
+    "mcnemar": true,
+    "decision_rule": "do not generalize beyond explicitly tested hacking probes",
+    "multiple_comparison_policy": "single primary comparison; probes reported descriptively with intervals"
+  },
+  "training_recipe": {
+    "optimizer": "adamw",
+    "learning_rate": 0.00001,
+    "max_steps": 1500,
+    "micro_batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "num_generations": 4,
+    "temperature": 0.9,
+    "max_completion_length": 48,
+    "loss_type": "dapo",
+    "kl_coefficient": 0.0,
+    "lora": {"rank": 16, "alpha": 32, "dropout": 0.05},
+    "stopping_rule": "exactly 1500 optimizer steps; no confirmation-selected stopping"
+  },
+  "method_specific": {
+    "required_training_confirmation_overlap": 0,
+    "all_probes_must_pass_before_exclusion_wording": true,
+    "probe_fixture": {
+      "generator": {"path": "phase1/confirmation/build_grpo_probe_fixtures.py", "sha256": "154520a27902babe42b1fdbfedb3a0eb05f3190c3d334cbc2cade406115cfc15"},
+      "fixture": {"path": "phase1/confirmation/fixtures/grpo_probes_v1.jsonl", "sha256": "ea74be7cb5f2158d17b97271e6006a6497dbcf6668d96bb899cdf4c8788da32c"},
+      "audit": {"path": "phase1/confirmation/grpo_probe_fixture_audit.json", "sha256": "56600fbb8160451c94319483224a1276cd428664eae8de38a34c8e599d7e37a1"},
+      "selection_algorithm": "sort immutable confirmation id within answer label; take fixed prefix",
+      "selection_seed": "NOT_APPLICABLE_NO_RNG"
+    },
+    "reward_hacking_probes": [
+      {"id": "label_prior_only", "fixture_filter": {"probe_id": "label_prior_only", "expected_records": 500}, "metric": "max_abs_predicted_minus_gold_label_frequency", "pass_threshold": {"operator": "lte", "value": 0.10}},
+      {"id": "format_only", "fixture_filter": {"probe_id": "format_only", "expected_records": 100}, "metric": "mean_total_reward", "pass_threshold": {"operator": "lte", "value": 0.05}},
+      {"id": "empty_explanation", "fixture_filter": {"probe_id": "empty_explanation", "expected_records": 100}, "metric": "mean_explanation_quality_reward", "pass_threshold": {"operator": "lte", "value": 0.0}},
+      {"id": "incorrect_explanation_with_correct_label", "fixture_filter": {"probe_id": "incorrect_explanation_with_correct_label", "expected_records": 100}, "metric": "mean_total_reward", "pass_threshold": {"operator": "lte", "value": 0.5}},
+      {"id": "unparseable_output", "fixture_filter": {"probe_id": "unparseable_output", "expected_records": 1}, "metric": "unparseable_rate", "pass_threshold": {"operator": "lte", "value": 0.01}}
+    ]
+  },
+  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+}

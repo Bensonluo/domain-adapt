@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-08-28",
+  "policy": "A benchmark becomes development data after its results or labels influence model, hyperparameter, method or narrative decisions. Renaming it does not restore blindness.",
+  "benchmarks": [
+    {
+      "id": "cmexam_test_and_historical_500",
+      "status": "DEVELOPMENT_CONTAMINATED",
+      "source_path": "phase1/data/processed/cmexam/test.jsonl",
+      "source_sha256": "bedf88e106cbd7dbefa2a9df5b3539867b8664827fa87e22b489ba30e23b5621",
+      "historical_subset_path": "phase1/data/processed/cmexam/holdout.jsonl",
+      "historical_subset_sha256": "bbeed1d863bcd573448e93f6b77fcc4b57f93ea2e08bcc98de94544af7417377",
+      "historical_subset_records": 500,
+      "normalized_question_overlap_with_full_train": 26,
+      "normalized_question_overlap_with_grpo_8k_train": 8,
+      "used_by": ["week17", "week19", "week20", "week21"],
+      "allowed_use": "development comparison and historical reproduction only"
+    },
+    {
+      "id": "cmexam_valid_clean_confirmation_v1",
+      "status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND",
+      "path": "phase1/data/processed/cmexam/confirmation_candidate_v1.jsonl",
+      "sha256": "c6d5f692dff505853345b026bb60b842a68ee83b9d47fe9b9ef2e4128aae5e8e",
+      "records": 6305,
+      "construction_report": "phase1/audit/cmexam_confirmation_candidate.json",
+      "allowed_use": "one confirmatory run after plan freeze; never for tuning",
+      "limitation": "public benchmark with locally accessible labels; does not satisfy external blind-test exit gate"
+    },
+    {
+      "id": "cmmlu_local_all",
+      "status": "DEVELOPMENT_PUBLIC_REUSED",
+      "test_csv_files": 67,
+      "test_aggregate_sha256": "7eb87616fa446bee45a8c0754f3c1faf3b6ca33f35ac740311d25013ebd889ba",
+      "dev_csv_files": 67,
+      "dev_aggregate_sha256": "3418e1fdec559e54bf66dfc6cd005c7aff3ac604a0514237ed36285eb4e72959",
+      "used_by": ["week12", "week15", "week16", "week17", "week19", "week20"],
+      "allowed_use": "development regression monitoring only"
+    },
+    {
+      "id": "preference_historical_random_holdout",
+      "status": "DEVELOPMENT_LEAKED_PROMPT_GROUPS",
+      "train_path": "phase1/data/processed/preference/train_split.jsonl",
+      "dev_path": "phase1/data/processed/preference/holdout.jsonl",
+      "normalized_prompt_group_overlap": 50,
+      "allowed_use": "historical reproduction only"
+    },
+    {
+      "id": "preference_grouped_v1",
+      "status": "DEVELOPMENT_GROUPED_CLEAN",
+      "train_path": "phase1/data/processed/preference/train_grouped_v1.jsonl",
+      "train_sha256": "9c98771668b585559a9aa8664aef89f6e048df136c3f1e993e970e2987c45d9c",
+      "train_records": 1299,
+      "dev_path": "phase1/data/processed/preference/dev_grouped_v1.jsonl",
+      "dev_sha256": "f73a7a12f584c3b93dfe92f607228d7c8196953be940a5f3491fb3f42dc62b61",
+      "dev_records": 100,
+      "normalized_prompt_group_overlap": 0,
+      "audit": "phase1/audit/preference_split_audit.json",
+      "allowed_use": "future development and confirmatory training selection; not an external blind preference test"
+    }
+  ],
+  "exit_gate": {
+    "external_medical_blind_test": "REQUIRED_NOT_AVAILABLE",
+    "external_general_blind_test": "REQUIRED_NOT_AVAILABLE",
+    "label_custodian_or_external_evaluator": "REQUIRED_NOT_CONFIGURED"
+  }
+}
