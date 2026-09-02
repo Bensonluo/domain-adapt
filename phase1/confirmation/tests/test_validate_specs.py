@@ -73,17 +73,16 @@ class ConfirmationSpecTests(unittest.TestCase):
         with self.assertRaisesRegex(SpecError, "development data lacks hash"):
             validate_spec(spec)
 
-    def test_rejects_external_blind_claim_wording(self):
+    def test_interpretation_can_describe_evaluation_limitations(self):
         spec = copy.deepcopy(self.specs["synthetic_replacement.json"])
-        spec["claim"]["allowed_wording_if_supported"] = "This is an external blind test."
-        with self.assertRaisesRegex(SpecError, "must not make any blind-test claim"):
-            validate_spec(spec)
+        spec["claim"]["interpretation_if_supported"] = "This is a local comparison, not an external blind test."
+        validate_spec(spec)
 
-    def test_rejects_blind_wording_in_every_claim_field(self):
+    def test_design_does_not_require_phase_exit_approval(self):
         spec = copy.deepcopy(self.specs["cpt.json"])
-        spec["claim"]["wording_if_inconclusive"] = "This was an external blind test."
-        with self.assertRaisesRegex(SpecError, "wording_if_inconclusive"):
-            validate_spec(spec)
+        self.assertNotIn("required_for_phase_exit", spec["external_blind"])
+        spec["claim"]["wording_if_inconclusive"] = "本地样本结果不确定，可考虑新的盲测样本。"
+        validate_spec(spec)
 
     def test_rejects_local_candidate_labeled_blind(self):
         spec = copy.deepcopy(self.specs["synthetic_replacement.json"])

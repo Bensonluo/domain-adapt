@@ -3,11 +3,11 @@
 > 目标: 从论文数学到代码实现,彻底理解 LoRA 和 QLoRA。
 > 预计时间: 14-20 小时
 >
-> **审查状态**：`IMPLEMENTATION_DONE / SVD_CLAIM_INVALIDATED`。LoRA 实现与 toy 对比存在；真实 Qwen ΔW 能量结论已撤回。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：已完成 LoRA 实现、toy 对比与 SVD 教学演示；真实模型更新分析为后续方向。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
 > **上周回顾（原计划）**: Week 3 应通过全量微调观察显存成本；当前仓库只有脚本，没有可核验的实测日志。本周学习 LoRA 的参数效率，但具体显存和效果收益必须由匹配实验决定。
 >
-> **为什么学这周**: LoRA 是你未来所有训练实验的基础方法。你的方向是 domain adaptation — 需要频繁地在不同领域数据上微调模型,LoRA 让这件事在单卡 4090 上可行。不理解 LoRA 的数学原理(rank 选择、alpha 含义),就只能照抄别人的配置。
+> **学习重点**: LoRA 降低领域适配的训练成本。本周通过低秩参数化、rank 与 alpha 的作用以及 PEFT 源码，理解配置选择与资源开销之间的关系。
 >
 > **思考锚点**: "LoRA 初始化时 B=0 保证了什么? 如果 B 也随机初始化会怎样?"
 
@@ -15,7 +15,7 @@
 
 ## Day 1-2: LoRA 论文精读
 
-> **思考**: 论文说只适配 q_proj 和 v_proj 就够了 (Table 4)。为什么不动 k_proj 和 output_proj? 什么情况下你会想动更多模块?
+> **思考**: 论文在 Table 4 中比较了适配模块的选择。q_proj、v_proj 与加入 k_proj、output_proj 的方案有哪些差异? 哪些情况值得测试更多模块?
 
 ### 做什么
 1. 精读 LoRA 论文 (Section 4 + Appendix)
@@ -89,7 +89,7 @@ python phase0/week4/compare_lora.py
 
 ## Day 7: PEFT 源码阅读
 
-> **思考**: 官方 PEFT 的 `LoraLinear` 实现和你的手写版有什么不同? (提示: 看 `merge_and_unload` 方法和 `scaling` 的处理)
+> **思考**: 官方 PEFT 的 `LoraLinear` 实现与本周手写版有什么不同? (提示: 看 `merge_and_unload` 方法和 `scaling` 的处理)
 
 ### 做什么
 1. 阅读 `peft/tuners/lora/layer.py` (~300 行)

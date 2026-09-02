@@ -41,15 +41,15 @@ phase2/
 ## 一步一步执行
 
 ```bash
-# 当前周：先看说明，再执行，最后验收
+# 查看当前周说明、运行与测试
 sed -n '1,240p' phase2/week22/README.md
 bash phase2/week22/run_week22.sh
 phase1/.venv/bin/python phase2/week22/validate_week22.py --scope complete
 phase1/.venv/bin/python -m unittest discover -s phase2/week22/tests -v
 
-# Week 22 验收通过后才进入 Week 23
+# Week 23 的后续实现入口
 sed -n '1,240p' phase2/week23/README.md
 bash phase2/week23/run_week23.sh
 ```
 
-尚未实现的周会返回退出码 3，不会生成假结果或标记伪完成。
+尚未实现的周会返回退出码 3，提示该周尚未实现，不生成实验结果。

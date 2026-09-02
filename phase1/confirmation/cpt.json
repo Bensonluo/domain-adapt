@@ -6,7 +6,7 @@
   "frozen_at": "2026-08-28",
   "claim": {
     "hypothesis": "Estimand A 检验固定 LoRA 模式下 CPT exposure 相对 no-CPT 的收益；Estimand B 检验相同 CPT exposure 和优化 token 预算下 LoRA 与 full adaptation mode 的差异。",
-    "allowed_wording_if_supported": "分别报告 CPT exposure 效应和匹配 exposure 下的 adaptation-mode 效应；结论限于本地确认候选，外部验证仍待完成。",
+    "interpretation_if_supported": "分别报告 CPT exposure 效应和匹配 exposure 下的 adaptation-mode 效应；结论限于本地确认候选，外部验证仍待完成。",
     "wording_if_rejected": "分别说明哪一个预注册 estimand 未获支持，不用另一 estimand 的结果替代。",
     "wording_if_inconclusive": "结果不确定，不合并两个 estimand，也不宣称 LoRA/full 的普适优劣。"
   },
@@ -60,5 +60,5 @@
     "full_scope_rule": "all trainable parameter names and count must be exported before training"
   },
   "method_specific": {"optimization_token_budget": 14000000, "verify_trainable_parameter_names_before_run": true},
-  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+  "external_blind": {"status": "NOT_AVAILABLE", "candidate_is_external_blind": false}
 }

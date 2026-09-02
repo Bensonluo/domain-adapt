@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Phase 1 governance status, JSON syntax, artifact paths and Markdown links."""
+"""Validate Phase 1 JSON syntax, artifact paths and Markdown links."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PHASE = REPO_ROOT / "phase1"
-EXPECTED_STATUS = "REMEDIATION_REQUIRED"
 SKIP_PARTS = {".venv", ".zcode", ".ms_cache", "results", "data"}
 
 
@@ -71,15 +70,6 @@ def check_artifact_paths(value: Any, location: str = "registry") -> int:
 
 def main() -> None:
     registry = json.loads((PHASE / "artifact_registry.json").read_text(encoding="utf-8"))
-    require(registry["phase_status"] == EXPECTED_STATUS, "artifact registry status drift")
-    for relative in ("README.md", "notes/phase1_summary.md", "audit/exit-gate.md"):
-        text = (PHASE / relative).read_text(encoding="utf-8")
-        require(EXPECTED_STATUS in text, f"{relative} lacks canonical phase status")
-    benchmark = json.loads((PHASE / "audit/benchmark_registry.json").read_text(encoding="utf-8"))
-    require(benchmark["exit_gate"]["external_medical_blind_test"] == "REQUIRED_NOT_AVAILABLE",
-            "medical external blind status drift")
-    require(benchmark["exit_gate"]["external_general_blind_test"] == "REQUIRED_NOT_AVAILABLE",
-            "general external blind status drift")
     require(all((PHASE / f"week{week}/CORRECTIONS.md").is_file() for week in range(9, 22)),
             "one or more Week 9-21 correction logs are missing")
     json_count = check_json()

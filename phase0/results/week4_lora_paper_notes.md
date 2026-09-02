@@ -64,7 +64,7 @@ scaling = alpha / rank
 ```
 
 - `alpha` 是一个固定常数（常见值 16 或 32）
-- `scaling = alpha / r`，当你增大 rank 时，每个 LoRA 分量的贡献自动缩小
+- `scaling = alpha / r`，固定 alpha 时，增大 rank 会降低该缩放系数
 - `alpha/r` 控制 LoRA 分支的缩放，但不能保证换 rank 后无需重新调学习率
 - `alpha = 2 × rank` 只是常见起始配置之一，不代表自动与原始权重量级匹配；仍需结合优化稳定性和 dev 指标选择
 

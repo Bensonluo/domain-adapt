@@ -49,7 +49,7 @@ python phase1/week21/evol_instruct.py \
 ### 做什么
 1. 合成数据质量评估：
    - 多样性（BERTScore / Self-BLEU）
-   - 正确性（固定样本复核；本次为 Codex 手工审阅，非临床医生/人类标注）
+   - 正确性（固定样本的 AI 非临床复核，非人工标注）
    - 与真实数据的分布差异
 2. **关键实验**: 合成数据替代 50% 真实数据，看效果是否保持
 
@@ -68,7 +68,7 @@ python phase1/week21/evol_instruct.py \
 bash phase1/week21/run_week21.sh
 ```
 
-新生成的数据会在 30 条固定审阅样本产生后暂停；逐条填写 `review_correct`、`review_notes`、`reviewer` 和 `reviewer_kind`（`ai_nonclinician`、`human_nonclinician` 或 `human_clinician`）后，再次运行同一命令即可继续。不要修改 `content_sha256`；流水线会据此防止题目内容变化后沿用旧标签。当前仓库中的审阅记录是 Codex 的手工 AI 复核，不得表述为人类或临床审核。
+新生成的数据会在 30 条固定审阅样本产生后暂停；逐条填写 `review_correct`、`review_notes`、`reviewer` 和 `reviewer_kind`（`ai_nonclinician`、`human_nonclinician` 或 `human_clinician`）后，再次运行同一命令即可继续。`content_sha256` 用于核验题目内容，防止内容变化后沿用旧标签。当前审阅记录来自 AI 非临床复核，尚无人工或临床审核结果。
 
 流水线把 raw response、accepted records、reject reasons、模型路径和 backend 分开记录；`mock` backend 只供单测，完整验收会拒绝 mock 证据。关键对照固定为：
 
@@ -115,7 +115,7 @@ python phase1/week21/validate_week21.py --scope complete
 ## 实测结论（2026-08-24）
 
 - 生成：Self-Instruct 1,000 条 + Evol-Instruct 250 条，全部来自本地 MLX teacher；accepted 数据结构有效率 100%，精确重复率 0%。
-- Codex 手工 AI 复核（非临床医生/人类标注）：25/30 = 83.3%，仅作定性 sanity check。
+- AI 非临床复核：25/30 = 83.3%，仅作定性 sanity check，不属于人工或临床验证。
 - 分布偏移：合成题干平均长度为真实样本的 2.03 倍；答案标签 JS divergence = 0.097。
 - 50% 替代：统一 CPU/float32 贪心评测下，CMExam holdout 53.0%（265/500），对比 Week 19 全真实 control 53.8%（269/500），下降 **0.8 个百分点**。
 - 判定：点估计满足“下降不超过 2 个百分点”的操作性阈值；配对 bootstrap 95% 区间为 [−3.4, +1.8] 个百分点，跨越 −2 个百分点，因此统计非劣效性未建立，结论为“有希望但证据不足”（McNemar p=0.6440）。

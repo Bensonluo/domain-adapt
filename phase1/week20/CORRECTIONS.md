@@ -15,7 +15,7 @@
 ## C20-03：proxy reward 失败被过早称为 reward hacking
 
 - 原问题：`rs_teacher` 仅比 base 少 1/500，便归因 teacher judge 反噬。
-- 修复：允许表述为“teacher-only 选择未改善目标任务，存在 proxy mismatch 假设”；不能据此证明 reward hacking。
+- 修复：teacher-only 选择在本次运行未改善目标任务，proxy mismatch 是一种可能解释；一题差异也可能来自运行波动，尚不足以归因于 reward hacking。
 
 ## C20-04：on-policy 范围不准确
 

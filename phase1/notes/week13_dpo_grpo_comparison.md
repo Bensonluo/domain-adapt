@@ -143,7 +143,7 @@ $$\hat{A}_i = \frac{r_i - \text{mean}(r_{1:G})}{\text{std}(r_{1:G})}, \qquad \ma
 ## 四、决策框架：什么场景用哪个
 
 ```
-你的任务是什么？
+任务类型是什么？
 │
 ├─ 任务有"可验证的正确答案"（数学/代码/逻辑）
 │   └─→ GRPO（规则 reward，无 hacking，能探索）—— R1 路线
@@ -165,7 +165,7 @@ $$\hat{A}_i = \frac{r_i - \text{mean}(r_{1:G})}{\text{std}(r_{1:G})}, \qquad \ma
 - **默认首选 DPO**（简单、够用、生态成熟）
 - **数据 noisy/小** → IPO
 - **只有 like/dislike 数据** → KTO
-- **数学/代码/reasoning** → GRPO（你的主攻方向）
+- **数学/代码/reasoning** → GRPO
 - **要 SOTA reasoning** → R1 多阶段管线（cold-start + GRPO + rejection sampling）
 
 ---
@@ -179,7 +179,7 @@ $$\hat{A}_i = \frac{r_i - \text{mean}(r_{1:G})}{\text{std}(r_{1:G})}, \qquad \ma
 5. **GRPO**（2024）反向：保留 RL 探索，但砍 critic + group baseline，轻量 on-policy。
 6. **DeepSeek-R1**（2025）收官：纯 GRPO + 规则 reward → reasoning 涌现，确立 reasoning 模型新范式。
 
-> **你的方向（蒸馏 + GRPO）**：GRPO 是核心，R1 的"rejection sampling 反向蒸馏"把 RL 能力固化进 SFT 数据——这正是**蒸馏 + GRPO 的交汇点**，值得深挖。
+> **蒸馏与 GRPO 的连接**：R1 通过 rejection sampling 将 RL 产生的回答转为 SFT 数据，可据此分析在线探索与离线蒸馏如何衔接。
 
 ---
 

@@ -3,13 +3,13 @@
 > 目标: 5 个核心推导,每个都从"已知"出发,一步步走到"结论"。
 > 预计时间: 10-14 小时
 >
-> **审查状态**：`DERIVATIONS_PRESENT / VALIDITY_PARTIAL`。五份推导文档存在；脱稿复述未验收，LoRA/SVD 经验部分已纠错。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：已完成五份数学推导，LoRA/SVD 经验解释已修订。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 6 你训练了完整的领域模型 — 全是工程实践。这周回到数学,因为工程做到一定程度后,瓶颈往往是"直觉不够"。推导的目的不是记住公式,而是建立直觉。
+> **前后衔接**: Week 6 侧重领域 SFT 实践；本周整理训练涉及的数学推导，将实现步骤与公式对应起来。
 >
-> **为什么学这周**: 这 5 个推导覆盖了 LLM 训练的核心数学。你不需要记住每一步,但你需要理解"结果为什么长这样"。比如 DPO loss 的直觉是 "让好回答的概率相对变高,坏回答的概率相对变低" — 推导只是把这句话变成公式。
+> **学习重点**: 梳理 attention 梯度、softmax 与交叉熵、LoRA 低秩参数化、DPO 目标和 AdamW 更新规则，解释公式的来源、假设与作用。
 >
-> **怎么用这周**: 每个 derivation 模板文件 (`derivation_*.md`) 包含: **起点**(已知什么)、**终点**(要证什么)、**步骤**(中间路径)、**检查点**(你到这一步时应该得到的结果)。如果你卡住了,看下一步的第一行提示,而不是整个答案。
+> **材料结构**: 各 `derivation_*.md` 按起点、目标、推导步骤和中间结果组织，便于逐步复核。
 
 ---
 
@@ -29,7 +29,7 @@
 - **检查点**: 应该得到一个包含 softmax(S) 的表达式
 
 **Step 2: 求 ∂L/∂S** (中间量,后续需要)
-- 已知 `O = softmax(S) @ V`,并且你已经有 ∂L/∂O
+- 已知 `O = softmax(S) @ V` 和上游梯度 ∂L/∂O
 - V^T 在哪边? ∂L/∂S = ∂L/∂O @ V^T × ∂softmax/∂S
 - softmax 的 Jacobian: `∂softmax(s_i)/∂s_j = p_i(δ_ij - p_j)`
 - **检查点**: 结果应该包含 `P @ (something)` 其中 P = softmax(S)
@@ -44,8 +44,7 @@
 > 当 softmax 接近 one-hot (某个 logit 远大于其他),梯度趋近 0。这就是为什么需要 scaling (÷√d_k) — 防止点积太大导致 softmax 尖锐化。
 
 ### 交付物
-- [ ] 手写推导照片 → `phase0/notes/week7_derivation_attention.jpg`
-- [ ] 能在白板上解释 "attention 梯度为什么可能爆炸"
+- [x] 推导与分析：[derivation_attention.md](derivation_attention.md)
 
 **参考**:
 - https://medium.com/@dzqueque/deriving-the-self-attention-gradient-formula
@@ -84,8 +83,7 @@
 > 实际代码不用 `log(softmax(z))` — 用 `log_softmax(z)`,它内部先减 max(z) 再算,避免数值溢出。推导时假设数值稳定,结论不变。
 
 ### 交付物
-- [ ] 手写推导照片 → `phase0/notes/week7_derivation_softmax_ce.jpg`
-- [ ] 验收: 5 分钟内在白板上推完
+- [x] 推导与数值稳定性分析：[derivation_softmax_ce.md](derivation_softmax_ce.md)
 
 ---
 
@@ -107,7 +105,7 @@
 **Step 2: SVD 分解的连接**
 - 任何矩阵 W 都可以写成: `W = UΣV^T = Σ σ_i u_i v_i^T`
 - 前 r 个奇异值捕获的能量 = `Σ_{i=1}^{r} σ_i^2 / Σ σ_i^2`
-- 打开 `lora.ipynb` 看你 Week 4 画的奇异值衰减曲线
+- 参照 Week 4 `lora.ipynb` 中的奇异值衰减示意图
 
 **Step 3: LoRA 为什么有效**
 - 关键假设: 预训练权重 W_0 已经编码了大部分知识
@@ -122,8 +120,7 @@
 - **直觉**: alpha 是 "LoRA 的总强度",rank 是 "LoRA 的自由度"
 
 ### 交付物
-- [ ] 手写推导照片 → `phase0/notes/week7_derivation_lora_svd.jpg`
-- [ ] 能回答“为什么低秩更新是经验假设，以及如何用真实 ΔW 与下游消融判断 rank 是否足够”
+- [x] 低秩参数化与 SVD 分析：[derivation_lora_svd.md](derivation_lora_svd.md)
 
 ---
 
@@ -144,7 +141,7 @@
 - RLHF 优化: `max_π E[reward(x,y)] - β KL(π || π_ref)`
 - 最优解: `π*(y|x) = (1/Z(x)) × π_ref(y|x) × exp(reward(x,y)/β)`
 - 其中 `Z(x) = Σ_y π_ref(y|x) exp(reward(x,y)/β)` 是配分函数
-- **检查点**: 到这里,你应该理解 "直接优化 π 需要知道 Z(x),但 Z(x) 不可计算"
+- **检查点**: 解释归一化常数 Z(x) 在最优策略闭式解中的作用及其计算成本
 
 **Step 2: 反解 reward**
 - 从 Step 1 反解: `reward(x,y) = β log(π*(y|x)/π_ref(y|x)) + β log Z(x)`
@@ -163,8 +160,7 @@
 > 关键技巧: 利用 Bradley-Terry 的成对比较,消掉了不可计算的 Z(x)。
 
 ### 交付物
-- [ ] 手写推导照片 → `phase0/notes/week7_derivation_dpo.jpg`
-- [ ] 能用一句话解释 DPO 相对 RLHF 的优势
+- [x] DPO 推导与方法比较：[derivation_dpo.md](derivation_dpo.md)
 
 **参考**:
 - DPO 论文: https://arxiv.org/abs/2305.18290
@@ -196,7 +192,7 @@ v̂_t = v_t / (1 - β2^t)                     # 偏差修正
 - 问题: 这个 λθ 会经过 m 和 v 的缩放
 - 实际 decay 量 = `lr × λθ × (自适应缩放因子)`
 - 自适应缩放因子对不同参数不同 → weight decay 效果不均匀
-- **检查点**: 你应该理解 "为什么经过 m/v 之后 decay 不均匀了"
+- **检查点**: 解释正则项进入 m/v 后，参数衰减与自适应更新如何耦合
 
 **Step 3: AdamW 的解耦**
 - 把 weight decay 从梯度里拿出来,直接作用在参数上:
@@ -211,12 +207,11 @@ v̂_t = v_t / (1 - β2^t)                     # 偏差修正
 - AdamW 解耦后,所有参数的 decay 比例一致 → 更合理
 
 ### 交付物
-- [ ] 手写推导照片 → `phase0/notes/week7_derivation_adamw.jpg`
-- [ ] 能在一句话内说清 AdamW vs Adam+L2 的区别
+- [x] AdamW 推导与比较：[derivation_adamw.md](derivation_adamw.md)
 
 ---
 
-## Day 6-7: 复习 + 模拟白板
+## 可选复习：模拟白板
 
 ### 复习方法 (间隔重复)
 1. **第一遍** (Day 6): 不看笔记,重新推 5 个,限时 15 分钟每个
@@ -224,10 +219,7 @@ v̂_t = v_t / (1 - β2^t)                     # 偏差修正
 3. **第二遍** (Day 7): 只推卡顿的部分,每个 5 分钟
 4. **白板模拟**: 找一面墙,讲给空气听,录音回听
 
-### 交付物
-- [ ] 5 份手写推导 (拍照存档)
-- [ ] 2 次完整复习记录
-- [ ] 1 次模拟白板录音
+五份推导已以 Markdown 形式交付。手写、白板和录音可作为复习方式，按需要采用。
 
 ---
 

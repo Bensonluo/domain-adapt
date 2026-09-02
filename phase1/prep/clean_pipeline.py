@@ -151,7 +151,7 @@ def generate_synthetic_raw(domain: str, n: int = 200, seed: int = 42) -> list[st
     """生成带「故意脏数据」的原始语料, 用于演示/验证清洗逻辑。
 
     混入: HTML 标签 / 过短碎片 / 完全重复 / 近似重复 / 正常文本。
-    真实数据留到训练前下载 (用户要求: 现在不下载)。
+    演示阶段使用合成数据；真实数据在训练前下载。
     """
     rng = random.Random(seed)
     clean_pool = [

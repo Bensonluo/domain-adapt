@@ -42,8 +42,8 @@
       "parameters_sha256": "328c7e2b43b6fd4020c976a26d2aa9ea27404b87049cc91287386b8a54a9fd5e"
     },
     "quality": {
-      "inputs_sha256": "848e71b3d857fdde6e567568cb64923790d7244ae99ec4b01624f711fc18964e",
-      "outputs_sha256": "150003460862a1d9792d9a1725484a554c13b0d7d1f421a1fb1c3fb382e3c62e",
+      "inputs_sha256": "47d5b411cc199cde906bac22f145cfdbbfd803e259f76abd662b2b3c057b5cfd",
+      "outputs_sha256": "7fe41d00694f6d49859e88f220c3e5a4282d13f4a71b94e25c13e2464613bad7",
       "parameters": {
         "audit_size": 30,
         "comparison_sample": 5000,
@@ -89,7 +89,7 @@
       "parameters_sha256": "b4f1ddbd1fb748b4956f878f2302a92745523e50191c302194307464215a9fef"
     },
     "summary": {
-      "inputs_sha256": "30910c8f86f76b4ef657b71722fbfcae5b6c4f81869f6bb2452e5e87fc3e46f2",
+      "inputs_sha256": "b482a89f8b95fa4bf1f842b8fbbfbcf0a9329030a09914f5df8b9ac695051af4",
       "outputs_sha256": "028dd5906ff0f2170c4bec477bfa2754a0dbbf206264d32d3e95ff5f646c4d76",
       "parameters": {
         "acceptance_threshold": -0.02,

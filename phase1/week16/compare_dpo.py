@@ -311,8 +311,8 @@ def verdict_section(fm_rows: list[dict], ctrl: dict) -> list[str]:
                    f"skewed 档 meanWR={fmt(r['skewed_mean_wr'])} (控制 {fmt(ctrl['skewed_mean_wr'])}, "
                    f"Δ{fmt(d['skewed_mean_wr'], '+.3f')}); matched 档 meanWR={fmt(r['matched_mean_wr'])} "
                    f"(控制 {fmt(ctrl['matched_mean_wr'])}, Δ{fmt(d['matched_mean_wr'], '+.3f')})。")
-        out.append("- 判定线索: IPO 长度归一 score → 若 sumWR/skewed_meanWR 相对 sigmoid **回升** "
-                   "(脱离 ≈0 / 0.056) = length-norm 对症; 若不变 = τ=0.3 偏低或长度偏差非 loss 形式可解。\n")
+        out.append("- 分析参考: 比较 IPO 与 sigmoid 的 sumWR/skewed_meanWR，观察相对 ≈0 / 0.056 的变化。"
+                   "长度归一化可能影响这些指标；若变化较小，τ=0.3 的设置或其他长度相关因素可作为后续研究的假设。长度匹配分桶减少了长度差异，但 meanWR 与训练目标仍有关联；独立任务指标可进一步说明收益是否延伸到任务表现。\n")
     else:
         out.append("(无 ipo run)\n")
     return out

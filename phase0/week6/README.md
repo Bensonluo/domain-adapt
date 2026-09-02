@@ -3,13 +3,15 @@
 > 目标: 把 Week 1-5 的所有知识整合,训练一个完整的领域 SFT 模型。
 > 预计时间: 14-20 小时
 >
-> **审查状态**：`EXTERNAL_SUBSTITUTE / PARTIAL`。外部项目完成了结构化实体匹配案例，但没有等价完成原计划的开放式任务与人工评估。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：实际交付为外部药品实体匹配 SFT 案例，原先设想的开放式任务未开展。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 5 你掌握了 SFT 的每个组件 — chat template、loss masking、数据质量。这周是 Phase 0 的实战高潮: 整合所有知识,端到端地训练一个你自己的领域模型。
+> **前后衔接**: 将 Week 5 的 chat template、loss masking 和数据质量检查组合到端到端领域 SFT 流程中。
 >
-> **为什么学这周**: 这是 Phase 0 的最终交付。从这周开始,你不再是在做练习 — 你在做真实的 domain adaptation。训练出来的模型会在 Week 8 被严格评估,让你看到 "数据+算法+工程" 的组合效果。
+> **实践重点**: 串联数据准备、训练、模型保存和初步评估，记录各环节的选择依据与问题定位过程。
 >
-> **思考锚点**: "从数据清洗到模型评估,每一步都可能有 bug。我怎么确保最终效果不好时,能定位到是哪一步出了问题?"
+> **分析重点**: 从数据清洗到模型评估，各阶段均可能影响最终结果。通过分阶段记录与检查，定位效果变化对应的环节。
+>
+> 定位思路：先检查样本与标签，再检查模板及 loss mask，随后对照训练日志和逐题输出。这样可以区分数据问题、训练目标变化与推理配置差异。
 
 ---
 
@@ -97,7 +99,7 @@ python merge_adapter.py --adapter ./domain-sft --output ./domain-sft-merged
 ### 做什么
 1. 20 题仅作 smoke test，不作为正式效果结论；题目覆盖不同场景和难度
 2. base 与 finetuned 使用同 runtime、模板、解码参数，盲化模型身份和回答顺序
-3. 保存逐题评分、rubric 和错误切片；正式验收扩大冻结题集并使用至少两名评分者
+3. 保存逐题评分、rubric 和错误切片；若扩大评估，可增加题目覆盖与独立评分者
 
 ### 跑
 ```bash
@@ -135,7 +137,7 @@ python phase0/week6/eval_manual.py \
 
 ## 成果
 
-Week 6 使用实战项目 [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training/tree/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126) 作为替代性交付，证据固定到 commit `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126`。它证明完成了一个结构化实体匹配 SFT 案例，但模型、数据、任务和评估与原计划并不完全一致，且人工评估交付物仍缺失。
+Week 6 的实践交付来自 [4bit-QLoRA-post-training](https://github.com/luopeng/4bit-QLoRA-post-training/tree/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126)，证据固定到 commit `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126`。已完成结构化实体匹配 SFT 案例；模型、数据、任务和评估与原计划不完全一致，人工评估交付物仍缺失。
 
 **数据准备** — 从 14K+ 药品知识库生成 58K+ Alpaca 格式训练样本，含硬负采样、噪声注入，并按药品编码分组划分 train/val/test。该规则降低了实体编码层面的直接重叠，但不等于已经排除模板、归一化 query、候选集合和同生成器分布重合。见 [prepare_data.py](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/prepare_data.py) 和 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/train/train.json)。
 
@@ -154,7 +156,7 @@ Week 6 使用实战项目 [4bit-QLoRA-post-training](https://github.com/luopeng/
 2. **名称前缀相似** — 如"阿魏酸钠注射液" vs "阿魏酸钠片"
 3. **随机负例** — 补充多样性
 
-数据增强包括噪声注入（随机替换/删除/插入字符），模拟真实场景中的错别字。按药品编码划分 train/val/test，用于控制目标实体编码层面的直接重叠；正式验收还应报告 normalized query、模板和候选集合 overlap，不能把单层分组笼统称为“零泄漏”。
+数据增强包括噪声注入（随机替换/删除/插入字符），模拟真实场景中的错别字。按药品编码划分 train/val/test，用于控制目标实体编码层面的直接重叠；进一步分析可检查 normalized query、模板和候选集合 overlap，不能把单层分组笼统称为“零泄漏”。
 
 最终产出 [train.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/train/train.json)（58K+ 条）、[val.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/val/val.json)（7K+ 条）、[test_instruction.json](https://github.com/luopeng/4bit-QLoRA-post-training/blob/9267c7c569eeb9f2b14d0a1cf0faa67c831d7126/domains/medical_entity/data/test/test_instruction.json)（7K+ 条），远超 Week 6 要求的 2000-5000 条。
 

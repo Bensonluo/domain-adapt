@@ -3,9 +3,9 @@
 > 目标: 理解 SFT 的每个细节,掌握 chat template 和 loss masking。
 > 预计时间: 14-20 小时
 >
-> **审查状态**：`PARTIAL`。template/masking 实现存在；masking 效果对照和质量/数量实验未完成。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：已完成 template、masking 与 SFT 实现；训练效果消融尚未运行。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 4 你理解了 LoRA 的数学 (SVD 视角) 和实现 (手写 + PEFT 源码)。LoRA 解决的是**硬件问题** — 用更少显存训练。这周解决的是**数据问题** — 怎么正确地喂训练数据。
+> **前后衔接**: Week 4 讨论 LoRA 的数学视角与实现；本周转向 SFT 的数据格式与训练目标，检查 chat template、loss masking 和数据质量如何影响训练。
 >
 > **为什么学这周**: SFT 是让 base model 变成 usable assistant 的关键步骤。assistant-only loss 让优化目标更贴近期望回答，避免长 prompt 主导 token loss；不 masking 不必然导致 prompt repetition，实际影响需要受控实验测量。
 >
@@ -55,7 +55,7 @@ labels (有masking): [-100, -100, ...] [-100, -100, ...] [assistant tokens]
                                        ↑ 只在这里算 loss
 ```
 
-在 `loss_masking.py` 中你需要:
+`loss_masking.py` 的实现步骤：
 1. 找到 `<|im_start|>assistant\n` 的 token 序列
 2. 标记它之后的所有 token 为 "需要计算 loss"
 3. 其他位置的 label 设为 -100

@@ -92,14 +92,14 @@ DPO 优化的是「偏好」（chosen vs rejected 整段回答），不是事实
 **④ 长度偏差主导，DPO 没解决 ⚠️（week14 QC 预测，本周实证）**
 week14 发现 chosen 更长 93.5% → 本周实测：sum-WR 全 ≈ 0（chosen 长必输 Σlogp）；skewed 档（长度差>50%）mean-WR 0.056——模型 95% 偏好更短的 rejected。这正是长度黑客风险的实锤，sigmoid DPO（Σlogp 目标）治不了。
 
-### 选优（弱信号，诚实标注）
+### 候选配置选择（弱信号）
 
 按预设门槛（medical_cn Δ ≥ −0.02 全过）+ matched-bucket mean-WR 排序，脚本把 **β=0.1**（0.231 > 0.154）列为后续候选。但这是 13 对上的 3/13 vs 2/13，**纯噪声**。三 β 在 holdout 不可区分；原“最优 β”声明撤回。
 
 ### → week16 行动项（本轮负结果直接驱动）
 
 1. **加数据**：300 对瞬间过拟合 → 用全量 1299（或更多），300 子集只够定方向不够泛化
-2. **换 IPO / length-normalized DPO**（`loss_type="ipo"`）：长度偏差是头号失败，sigmoid Σlogp 治不了，IPO 的长度归一 score 直接对症
+2. **比较 IPO / length-normalized DPO**（`loss_type="ipo"`）：当前 sigmoid Σlogp 配置未改善所观察的长度偏差；IPO 的长度归一 score 可用于进一步比较训练目标的影响。比较时同时查看长度分桶与独立任务指标，以区分评分形式变化和任务表现变化。
 3. **`--noise` 失败模式**：钩子已埋，系统跑验证「数据噪声 vs 过拟合」的可分离性
 4. β 扫描本身**已答完**：在 300 对 + sigmoid 设定下，β 不是关键变量（三 β 不可分），关键变量是数据量 + loss 形式
 

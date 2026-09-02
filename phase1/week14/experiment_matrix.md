@@ -6,7 +6,9 @@
 > - 基座 `Qwen3.5-0.8B-Base-ms`（exotic 多模态 VLM，慢且不稳）→ **`Qwen/Qwen3-1.7B`**（标准 qwen3 arch，2.6s/iter、稳）
 > - DPO 基线 `week12_eval/real_cpt_fused`（全量 FT，**domain gain −0.086 负**）→ **`week12_lora_cpt/50_50_fused`**（LoRA-CPT，**domain gain +0.043 正**、通用无遗忘）
 >
-> 即 CPT-only 基线不再是「勉强 CPT 的负 gain 模型」，而是**正经 domain-adapted 的正 gain 模型**——DPO 起点更扎实。偏好数据（1399 对）与长度偏差（93.5%）是纯文本、模型无关，仍有效（绝对 token 数因换 tokenizer 略变，方向不变）。
+> 后续 CPT-only 基线采用当前评测中 **domain gain 为正的配置**，替换此前负 gain 的配置，作为 DPO 起点。偏好数据（1399 对）与长度偏差（93.5%）的文本统计继续保留；token 统计随 tokenizer 变化分别记录。
+>
+> 这一选择用于确定后续实验的实际起点，不表示混合比例或适配方法已达到最优。基线变化与偏好数据统计分别记录，便于解释后续 DPO 的增量表现。
 
 ---
 

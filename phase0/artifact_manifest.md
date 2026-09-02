@@ -1,19 +1,19 @@
-# Phase 0 产物清单
+# Phase 0 交付物清单
 
-| 周 | 计划产物 | 实际证据 | 状态 | 备注 |
-|---|---|---|---|---|
-| W1 | attention/transformer/训练/lm-eval 基线 | `week1/*.py`、`results/loss_curve.png`、checkpoint/sample | PARTIAL | lm-eval 与行为验收缺失 |
-| W2 | nanoGPT 训练、样例、复盘 | `week2/*.py`、`results/week2_*` | PRESENT | 实际文件名与计划不同 |
-| W3 | HF 笔记、full FT 日志/显存/loss | `week3/read_notes.md`、两个 comparison、训练脚本 | PARTIAL | full FT 实测结果缺失 |
-| W4 | LoRA/QLoRA 笔记、实现、对比、SVD | `week4/*`、`results/week4_*` | PARTIAL | notebook 仅为随机矩阵教学演示 |
-| W5 | template、masking 对照、质量/数量报告 | 脚本、notebook、checklist | PARTIAL | 两个训练对照均缺失 |
-| W6 | 数据、模型、loss、人工评估 | 外部 `4bit-QLoRA-post-training/medical_entity` @ `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126` | EXTERNAL_PARTIAL | 代码证据已固定 commit；仍需补运行/数据/checkpoint manifest 与人工评估 |
-| W7 | 五份推导、复习/白板证据 | 五份 `derivation_*.md` | PARTIAL | 内容存在，行为验收缺失；SVD 已纠错 |
-| W8 | benchmark、judge、人工 IAA、总结 | `eval_report.md`、judge 代码、rubric 模板、知识图谱 | PARTIAL | 结构化评估存在，开放式评估未完成 |
+| 周 | 已交付材料 | 内容与范围 |
+|---|---|---|
+| W1 | `week1/*.py`、`results/loss_curve.png`、checkpoint/sample | attention、Transformer 和训练循环实现；lm-eval 基线未留存 |
+| W2 | `week2/*.py`、`results/week2_*` | nanoGPT 训练、不同 temperature 样例和复盘 |
+| W3 | `week3/read_notes.md`、两个 comparison、训练脚本 | HF 源码阅读与框架比较；full FT 资源实测尚未运行 |
+| W4 | `week4/*`、`results/week4_*` | LoRA/QLoRA 笔记、实现、PEFT 对比及随机矩阵 SVD 演示 |
+| W5 | 脚本、notebook、checklist | chat template、loss masking 和 SFT 训练目标实现；模型效果消融尚未运行 |
+| W6 | 外部 `4bit-QLoRA-post-training/medical_entity` @ `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126` | 实际交付调整为 Qwen 系列药品实体匹配案例，覆盖数据、训练与结构化评估 |
+| W7 | 五份 `derivation_*.md` | attention、softmax+CE、LoRA/SVD、DPO 和 AdamW 推导及纠错 |
+| W8 | `eval_report.md`、judge 代码、rubric 模板、知识图谱 | 完成结构化评估报告；开放式 judge 与人工评分部分为原型和设计材料 |
 
-外部案例必须拆分记录：
+## 外部案例
 
-- `medical_entity`：Week 6 替代性交付，Qwen 系列、药品实体匹配。
-- `master_data`：Week 8 独立评估案例，Gemma 26B、机构/产品匹配；代码证据同样固定到 `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126`。
+- `medical_entity`：Week 6 的 Qwen 系列药品实体匹配实践。
+- `master_data`：Week 8 的独立评估案例，采用 Gemma 26B 进行机构/产品匹配；代码版本同为 `9267c7c569eeb9f2b14d0a1cf0faa67c831d7126`。
 
-二者不得合并成同一训练—评估闭环。
+两个案例的模型和任务不同，分别记录其训练与评估结果。

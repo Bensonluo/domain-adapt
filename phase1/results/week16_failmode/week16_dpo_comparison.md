@@ -58,4 +58,4 @@
 ### ③ IPO (β=0.3, length-normalized) — 攻 week15 长度偏差
 
 - IPO: sumWR=0.03 (控制 0.02, Δ+0.010); skewed 档 meanWR=0.167 (控制 0.056, Δ+0.111); matched 档 meanWR=0.462 (控制 0.154, Δ+0.308)。
-- 判定线索: IPO 长度归一 score → 若 sumWR/skewed_meanWR 相对 sigmoid **回升** (脱离 ≈0 / 0.056) = length-norm 对症; 若不变 = τ=0.3 偏低或长度偏差非 loss 形式可解。
+- 分析参考: 比较 IPO 与 sigmoid 的 sumWR/skewed_meanWR，观察相对 ≈0 / 0.056 的变化。长度归一化可能影响这些指标；若变化较小，τ=0.3 的设置或其他长度相关因素可作为后续研究的假设。长度匹配分桶减少了长度差异，但 meanWR 与训练目标仍有关联；独立任务指标可进一步说明收益是否延伸到任务表现。

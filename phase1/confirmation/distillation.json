@@ -6,7 +6,7 @@
   "frozen_at": "2026-08-28",
   "claim": {
     "hypothesis": "在相同 prompt/completion、训练 token、步数和 seed 下，soft KL 相对 hard CE 改善医学确认集并减少通用能力退化。",
-    "allowed_wording_if_supported": "在同数据同预算和三个 seed 的受控比较中，soft KL 相对 hard CE 有可重复收益；结论限于该 teacher/student/config 和本地确认候选，外部验证仍待完成。",
+    "interpretation_if_supported": "在同数据同预算和三个 seed 的受控比较中，soft KL 相对 hard CE 有可重复收益；结论限于该 teacher/student/config 和本地确认候选，外部验证仍待完成。",
     "wording_if_rejected": "该受控配置不支持 soft KL 优于 hard CE。",
     "wording_if_inconclusive": "hard/soft 监督差异不确定，不把历史跨实验差异归因于 soft labels。"
   },
@@ -53,5 +53,5 @@
     "stopping_rule": "three fixed epochs with identical example order per seed; no development-selected stopping"
   },
   "method_specific": {"alpha_values": [1.0, 0.5, 0.0], "same_prompt_completion_ids_required": true, "equal_optimization_tokens_required": true},
-  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+  "external_blind": {"status": "NOT_AVAILABLE", "candidate_is_external_blind": false}
 }

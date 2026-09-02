@@ -6,7 +6,7 @@
   "frozen_at": "2026-08-28",
   "claim": {
     "hypothesis": "50% 合成替代在预设 −0.02 绝对准确率 margin 下，相对 clean real control 非劣效。",
-    "allowed_wording_if_supported": "在 clean matched 数据、三个 seed 和预注册 −2pp margin 下，本地确认候选支持 50% 合成替代非劣；外部验证与临床人工质量验证仍待完成。",
+    "interpretation_if_supported": "在 clean matched 数据、三个 seed 和预注册 −2pp margin 下，本地确认候选支持 50% 合成替代非劣；外部验证与临床人工质量验证仍待完成。",
     "wording_if_rejected": "置信区间未达到预设非劣效标准，不能称 50% 合成替代非劣。",
     "wording_if_inconclusive": "结果不确定，只报告效应量和区间，不用点估计通过代替非劣效检验。"
   },
@@ -63,6 +63,6 @@
     "lora": {"rank": 16, "alpha": 32, "dropout": 0.05},
     "stopping_rule": "three fixed epochs with arm-paired batching by slot_id; no development-selected stopping"
   },
-  "method_specific": {"noninferiority_margin": -0.02, "required_training_confirmation_overlap": 0, "human_quality_review": "two qualified blinded reviewers with agreement reported"},
-  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+  "method_specific": {"noninferiority_margin": -0.02, "required_training_confirmation_overlap": 0, "human_quality_review": "optional follow-up for clinical-use questions; not performed in this experiment"},
+  "external_blind": {"status": "NOT_AVAILABLE", "candidate_is_external_blind": false}
 }

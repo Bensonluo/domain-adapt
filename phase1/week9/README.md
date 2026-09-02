@@ -1,6 +1,6 @@
 # Week 9：CPT 理论
 
-> 方法学纠错与当前允许表述见 [`CORRECTIONS.md`](CORRECTIONS.md)。本页保留历史学习过程，纠错记录优先于旧结论。
+> 方法分析与修订过程见 [`CORRECTIONS.md`](CORRECTIONS.md)，本页记录学习内容和实践思考。
 
 > 目标: 理解 Continual Pre-training 的理论基础，精读 3 篇核心论文。
 > 预计时间: 10-14 小时

@@ -47,7 +47,7 @@ self.lm_head.weight = self.model.embed_tokens.weight
 causal_mask = self._update_causal_mask(
     attention_mask, past_key_values, input_ids, ...
 )
-# 本质就是生成一个 (T, T) 的上三角 mask，和你 Week 1 的 triu 一样
+# 生成一个 (T, T) 的上三角 mask，与 Week 1 的 triu 实现对应
 # 但 HF 还要处理：padding mask（batch 内不等长）、KV cache 的 mask 长度
 ```
 这就是为什么 HF 的 forward 长 — 它要处理 padding + cache + 多种输入组合。
@@ -133,7 +133,7 @@ def compute_loss(self, model, inputs):
     loss = outputs.loss               # 模型自己算的 loss
     return loss
 ```
-HF 的模型 `forward` 在有 `labels` 时自动算 cross_entropy loss 并返回。你 Week 1 的 MiniGPT 也是这么做的：`if targets is not None: loss = F.cross_entropy(...)`.
+HF 的模型 `forward` 在有 `labels` 时自动算 cross_entropy loss 并返回。Week 1 的 MiniGPT 采用相同方式：`if targets is not None: loss = F.cross_entropy(...)`.
 
 **Q: gradient accumulation 在哪里处理的?**
 
@@ -300,7 +300,7 @@ trainer = Trainer(model=model, args=training_args, train_dataset=dataset)
 trainer.train()
 ```
 
-结论：Trainer 内部做的事和 nanoGPT 一模一样（forward → loss → backward → clip → step），但额外封装了 logging、eval、save best、gradient accumulation、mixed precision、wandb、early stopping。你写 200 行的训练逻辑，Trainer 用配置项覆盖了。
+结论：Trainer 与 nanoGPT 的核心训练流程对应（forward → loss → backward → clip → step），并进一步封装了 logging、eval、save best、gradient accumulation、mixed precision、wandb 和 early stopping，将这些训练逻辑转换为配置与扩展接口。
 
 ### 总结
 

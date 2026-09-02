@@ -1,27 +1,23 @@
-# Phase 1 退出门槛
+# Phase 1 结果解读与改进方向
 
-## 两条完成线
+Phase 1 已交付 CPT、偏好优化、GRPO、蒸馏和合成数据的理论材料、训练流程、对比实验及复盘。实验中的失败、偏差和后续调整也是这条实践路径的重要内容。
 
-- **学习完成**：代码、笔记或实验流程跑通，并能解释结果。这一层大部分已完成。
-- **研究通过**：结论由独立、可复现、能回答该问题的证据支持。这一层尚未通过。
+## 当前结果与解释
 
-周级状态必须分别记录：`DELIVERABLE_DONE / EVIDENCE_PRESENT / REPRODUCIBLE / CLAIM_VERIFIED / FOLLOWUP_REQUIRED`。勾选交付物不能自动推出 claim 已验证。
+- CPT 配比实验提供了后续基线；模型、方法与步数的变化使 LoRA 的单独贡献尚未分离。
+- DPO/IPO 实验发现长度偏差和评价指标与训练目标相关的问题；grouped split 已修复 prompt 交叉。
+- GRPO 的训练 reward 上升，历史评估发现 8/500 题与训练重叠。重分析给出了 clean 效应范围，但完整逐题统计无法恢复。
+- 蒸馏比较形成了 teacher explanation、soft KL 和 rejection sampling 的结果与取舍；单 seed 的差异仍包含运行波动。
+- 合成替代实验的点估计为 −0.8pp，区间尚不支持 −2pp margin 下的非劣效；清理后的两臂数据已经准备好。
 
-## 通过条件
+## 进一步验证的选择
 
-Phase 1 只有同时满足以下条件，才可从 `REMEDIATION_REQUIRED` 改为 `PASSED`：
+| 希望回答的问题 | 有帮助的后续实验 |
+|---|---|
+| 收益来自哪项改动？ | 匹配模型、数据和预算，单独改变目标变量 |
+| 差异是否稳定？ | 重复独立 seed，结合逐题配对区间 |
+| 新数据上是否仍有效？ | 采用未用于选模的评估集，进一步测试新来源样本 |
+| reward 是否反映任务质量？ | 独立任务指标与具体失败模式 probes |
+| 合成数据是否适合临床应用？ | 临床专业评审与实际应用场景验证 |
 
-1. `phase1/README.md`、claim matrix、artifact manifest 和最终总结状态一致。
-2. 核心数据、base model revision、训练配置、seed、checkpoint、逐题预测和 summary 有稳定 lineage。
-3. 当前 CMExam 500 题及既有 CMMLU 子集明确标为 dev；另有冻结且未参与选模的 blind test。
-4. 核心 winner 至少 3 个独立训练 seed；报告 paired bootstrap CI 和适用时的 McNemar，而非只比较点估计。
-5. CPT 的方法、模型、数据、token budget 和训练步数按待回答问题受控；不得用同时更换多个变量的运行归因给 LoRA 或数据配比。
-6. 偏好数据按规范化 prompt/source 分组切分；长度、来源和重复泄漏通过审计；DPO/IPO 包含匹配的 SFT/instruct baseline。
-7. GRPO 结论包含 reward-hacking probes、独立 outcome metric 和至少一个关键超参消融；只能声称已排除实际检查过的 hacking 类型。
-8. hard CE vs soft KL 使用同数据、同 token budget、同训练制度和多 seed 对照；“dark knowledge”等机制解释需独立验证，不能由多臂 winner 反推。
-9. 合成数据非劣效 margin 在看结果前冻结；移除或分层报告 overlap；临床正确性声明由人类临床评审支持。
-10. 阶段最终总结中的每个结果性声明映射到 claim ID；核心 claim 为 `VERIFIED` 或正式 `WAIVED`。
-
-## 当前判定
-
-`REMEDIATION_REQUIRED`：Week 9–21 学习与实验执行丰富，但独立盲测、多 seed、受控归因和跨周证据链仍未闭环。
+五类后续实验设计见 [confirmation](../confirmation/README.md)，尚未执行。它们是继续研究时可采用的方案，不是现有交付的额外完成条件。

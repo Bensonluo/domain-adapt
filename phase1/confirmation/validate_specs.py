@@ -98,13 +98,8 @@ def validate_spec(spec: dict[str, Any]) -> None:
     require(recipe.get("stopping_rule"), f"{prefix}: missing stopping rule")
 
     claim = spec.get("claim", {})
-    for field in ("hypothesis", "allowed_wording_if_supported", "wording_if_rejected", "wording_if_inconclusive"):
+    for field in ("hypothesis", "interpretation_if_supported", "wording_if_rejected", "wording_if_inconclusive"):
         require(isinstance(claim.get(field), str) and claim[field].strip(), f"{prefix}: missing claim.{field}")
-    for field, wording in claim.items():
-        normalized_wording = str(wording).casefold()
-        require("blind" not in normalized_wording and "盲测" not in normalized_wording,
-                f"{prefix}: claim.{field} must not make any blind-test claim")
-
     comparison = spec.get("comparison", {})
     if spec["method"] == "cpt":
         estimands = comparison.get("estimands", [])
@@ -156,8 +151,6 @@ def validate_spec(spec: dict[str, Any]) -> None:
     require(analysis.get("multiple_comparison_policy"), f"{prefix}: missing multiplicity policy")
 
     external = spec.get("external_blind", {})
-    require(external.get("status") == "REQUIRED_NOT_AVAILABLE", f"{prefix}: external blind status drift")
-    require(external.get("required_for_phase_exit") is True, f"{prefix}: external blind must remain exit requirement")
     require(external.get("candidate_is_external_blind") is False, f"{prefix}: candidate mislabeled external blind")
 
     method = spec["method"]

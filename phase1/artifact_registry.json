@@ -1,7 +1,6 @@
 {
   "schema_version": "1.0",
   "phase": "phase1",
-  "phase_status": "REMEDIATION_REQUIRED",
   "updated_at": "2026-08-28",
   "evaluation_policy": {
     "development_benchmarks": [
@@ -12,7 +11,7 @@
     "confirmation_candidate_status": "FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND",
     "benchmark_registry": "phase1/audit/benchmark_registry.json",
     "external_blind_test": null,
-    "external_blind_test_status": "REQUIRED_NOT_AVAILABLE"
+    "external_blind_test_status": "NOT_AVAILABLE"
   },
   "artifacts": [
     {
@@ -80,7 +79,7 @@
         "sha256": "3a3b15a0ae86996ff327f8fa16b4f3d0e3294ca88a3ab460fe03e52ff35f8cef"
       },
       "evidence_status": "READY_FOR_CONFIRMATION_RUN",
-      "limitations": ["training_not_rerun", "external_blind_test_required_not_available"]
+      "limitations": ["training_not_rerun", "external_blind_test_not_available"]
     },
     {
       "module": "core_confirmation_specifications",
@@ -93,14 +92,14 @@
       ],
       "validator": "phase1/confirmation/validate_specs.py",
       "evidence_status": "FROZEN_BEFORE_EXECUTION",
-      "limitations": ["confirmation_runs_not_executed", "external_blind_test_required_not_available"]
+      "limitations": ["confirmation_runs_not_executed", "external_blind_test_not_available"]
     },
     {
       "module": "local_remediation_completion_review",
       "audit": "phase1/audit/completion-review.md",
       "validator": "phase1/audit/run_all.sh",
       "evidence_status": "LOCALLY_VERIFIED",
-      "limitations": ["phase_status_remains_remediation_required", "confirmation_runs_not_executed", "external_blind_test_required_not_available"]
+      "limitations": ["confirmation_runs_not_executed", "external_blind_test_not_available"]
     }
   ]
 }

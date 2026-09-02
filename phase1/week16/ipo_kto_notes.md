@@ -1,7 +1,7 @@
 # Week16 Day5：IPO / KTO 论文要点
 
 > 服务于 `week16_dpo_comparison.md` 的「why IPO」段。IPO 是本周失败模式实验的核心 (攻 week15 长度偏差),
-> KTO 作对比理解 (本周不跑: 需非配对数据, 我们的数据是配对 chosen/rejected)。
+> KTO 作对比理解；本周数据为配对 chosen/rejected，未转换为 KTO 的单条偏好标签格式进行实验。
 
 ---
 
@@ -37,7 +37,7 @@ elif loss_type == "ipo":
 - τ 范围: IPO paper 常用 0.5–1.0; 旧 TRL v0.8.1 文档建议 0–0.5。本周取 **β=0.3** (与 sigmoid β=0.3 baseline 单变量对照), 偏低端 — 若 IPO 不显效, τ 是首要待查混淆。
 
 ### 为什么本周选 IPO (不是 SimPO/KTO)
-week15 实测: sigmoid DPO 的 **Σ-logp 目标**让「chosen 更长 → Σ logp 必更负 → 必输」(sum-WR≈0, skewed 档 mean-WR 0.056)。这是 DPO 文献经典长度黑客。IPO 的 **mean-logp score** 消掉 Σ-长度混淆 → 直接检验「长度偏差是不是 loss 形式问题」。SimPO 也长度归一但无 reference model (我们的栈要 ref), KTO 要非配对数据 (我们是配对)。IPO 是对症且数据兼容的唯一选项。
+Week 15 的 sum-WR≈0、skewed 档 mean-WR 0.056 提示长度因素可能影响比较，因此 Week 16 选择 IPO，检验 mean-logp score 下的变化。与 SimPO 和 KTO 相比，IPO 可以复用当前 reference model、配对数据和训练入口，实现改动较小；这是一项工程选择，不代表其他方法不可行。
 
 ---
 
@@ -60,7 +60,7 @@ HALO (Human-Aware Loss Objective) — 用 prospect theory (Kahneman-Tversky) 的
 ### 实践意义
 - 只需 binary signal (单条好/坏), 不需 curated 配对 → 真实场景 (用户反馈) 更易收集。
 - 论文称 match/exceed DPO。
-- **本周不跑**: 我们的数据 (medical_evidence_DPO, 1399 配对) 是配对格式, KTO 要非配对; 且 `train_dpo.py` 的 `--loss-type` choices 是 {sigmoid, ipo, hinge, robust} (无 kto, DPOTrainer 走配对)。KTO 在 TRL 是独立 `KTOTrainer` + 非配对数据格式。留作后续。
+- **本周不跑**: 当前数据（medical_evidence_DPO，1399 配对）采用 chosen/rejected 格式；`train_dpo.py` 的 `--loss-type` choices 是 {sigmoid, ipo, hinge, robust}，不包含 KTO。测试 KTO 需转换数据并接入独立的 `KTOTrainer`，本周未实施。
 
 ---
 

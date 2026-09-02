@@ -1,43 +1,26 @@
-# Phase 1 评估隔离与盲测协议
+# Phase 1 评估数据与后续验证
 
-## 已确认的污染边界
+## 当前评估数据的使用情况
 
-- CMExam 官方 test 及其 500 题子集已参与 Week 17/19/20/21 的比较、选型和叙事，永久降级为 dev。500 题中另有 26 题与官方 train 规范化重复，其中 8 题实际进入 GRPO 8K train，Week 17 迁移结论因此失效。
-- CMMLU 已从 Week 12 起反复参与 baseline、比例、beta、方法和蒸馏臂比较，永久作为 regression/dev benchmark。
-- 历史偏好 random split 有 50 个 normalized prompt 组跨 train/holdout，历史胜率只能作描述性证据。
-- 改文件名、换目录或重新抽取上述来源，均不能恢复盲测资格。
+- CMExam 官方 test 及其 500 题子集参与了 Week 17/19/20/21 的比较与选型，按实际用途记录为 dev。500 题中有 26 题与官方 train 规范化重复，其中 8 题实际进入 GRPO 8K train，影响了迁移效果的解释。
+- CMMLU 从 Week 12 起参与 baseline、配比、beta 和方法比较，用于 development regression。
+- 历史偏好 random split 有 50 个 normalized prompt 组跨 train/holdout，已有结果反映该切分下的表现。
+- 同一批数据此前参与过哪些选择，会影响结果的独立性；更换文件名或目录不会改变使用历史。
 
-机器登记见 [`benchmark_registry.json`](benchmark_registry.json)，数据级统计见 [`benchmark_split_audit.json`](benchmark_split_audit.json) 和 [`preference_split_audit.json`](preference_split_audit.json)。
+机器索引见 [`benchmark_registry.json`](benchmark_registry.json)，统计见 [`benchmark_split_audit.json`](benchmark_split_audit.json) 和 [`preference_split_audit.json`](preference_split_audit.json)。
 
-## 当前可用但不等于 blind 的确认集
+## 已准备的本地确认集
 
-从项目从未用于选模的 CMExam `valid` 中，按结构规则排除了：
+从未用于本项目选模的 CMExam `valid` 中，排除了与 train/test 重复的题目、非单选或无效记录及内部重复题，得到 6,305 题 `confirmation_candidate_v1`。
 
-- 与 train 重复的规范化题目；
-- 与已污染 test 重复的规范化题目；
-- 非单选和无效记录；
-- valid 内重复题。
+筛选未使用模型输出，但公开数据的答案本地可见，因此记录为 `FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND`。它可以用于研究已选方案在另一批样本上的表现。
 
-剩余 6,305 题冻结为 `confirmation_candidate_v1`。选择过程未查看模型输出，但由于 CMExam 是公开数据且答案本地可见，其状态只能是 `FROZEN_CONFIRMATION_CANDIDATE_NOT_BLIND`。
+## 后续实验如何减少歧义
 
-## 确认运行前必须冻结
+提前记录待回答的问题、候选模型、数据版本、seed、超参数、主指标和统计方法，有助于区分事前设计与结果出来后的解释。已有 run manifest 模板可直接用于这一记录。
 
-1. claim ID 和允许结论措辞。
-2. 候选模型/checkpoint hash。
-3. 训练数据 hash、seed、超参数和停止规则。
-4. primary metric、最小实际重要差异或非劣效 margin。
-5. 配对统计方法、失败类型和多重比较处理。
-6. 哪些结果会判定支持、拒绝或证据不足。
+如果结果用于继续调参，就将这次使用记为探索过程。重复实验与新的评估样本可帮助判断发现是否稳定。
 
-冻结内容写入单独 run manifest 后，才能运行确认集。结果出来后禁止基于该结果调参再跑同一 claim；若修改方案，必须建立新 claim，并把该集合降级为 dev。
+## 外部验证的适用场景
 
-## Phase 1 正式退出仍缺什么
-
-真正 blind test 需要来自未参与本项目决策的新来源/新模板/真实业务样本，并由外部评估器或 label custodian 保管标签。至少需要：
-
-- 医学任务 blind set；
-- 通用能力 blind set；
-- 数据来源、许可、去重/训练重叠审计；
-- 只返回逐题正确性或签名结果、而非在选模阶段暴露标签。
-
-在这些条件满足前，6,305 题确认集可以提高证据强度，但不能把 Phase 1 状态改为 `PASSED`。
+若后续关注跨来源泛化或真实业务效果，可以增加新来源、新模板或业务样本。由独立评估方保管标签是减少选模影响的一种方式，并非所有实验都需要这一安排。临床正确性则需要相应专业评审；当前非临床 AI 抽检没有回答这一问题。

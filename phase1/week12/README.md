@@ -25,7 +25,7 @@ week11 已证：15 条 fake-tokenizer 合成数据 CPT 只学「医疗腔调」�
 
 ### 框架：`mlx_lm.evaluate`（= lm-eval-harness 任务注册 + MLXLM 模型 wrapper）
 
-为什么不用 `lm_eval --model hf`：我们的模型是 **MLX 格式**（Apple Silicon 微调产物），lm-eval-harness 原生不认 MLX。`mlx_lm.evaluate` 内部把 MLX 模型包成 `MLXLM(LM)` 类，调 `lm_eval.simple_evaluate(...)`，复用 lm-eval 全部任务注册。
+为什么不用 `lm_eval --model hf`：实验模型是 **MLX 格式**（Apple Silicon 微调产物），lm-eval-harness 原生不认 MLX。`mlx_lm.evaluate` 内部把 MLX 模型包成 `MLXLM(LM)` 类，调 `lm_eval.simple_evaluate(...)`，复用 lm-eval 全部任务注册。
 
 为什么**直接调 Python API**而不是 `mlx_lm evaluate` CLI：见下方「关键坑」。
 
@@ -188,11 +188,13 @@ CMMLU 是 4 选 1，**随机基线 25%**。0.8B 在 CMMLU 绝对分通常 25-40%
 
 2. **但真数据 domain gain 仍未转正**（8/8 还是 regressed，只是幅度小）。结合训练 loss 持平 3.18 → 真数据这轮**根本没学到医疗 fact**，所以谈不上「领域提升」。退化 −0.086 更像是「全量微调扰动权重导致的轻微漂移」，而非「学了新的忘了旧的」。
 
-3. **更值钱的发现 —— 200 iter 全量 CPT 是「两头不讨好」的甜点区外**：步数/lr 不足以学会新 domain（underfit，无 domain gain），但全量权重扰动仍足以侵蚀已有能力（仍 −9% 医疗 / −13% 通用）。要让 CPT 出现正 domain gain，下一步必须二选一：
-   - **加 iter / 加 lr**（但遗忘风险同步升 → 需更精细的 domain/general 数据配比）
-   - **换 PEFT（LoRA）** 把 domain 学习隔离在 adapter 里，少动 base 权重
+3. **200 iter 全量 CPT 的结果与后续方向**：当前配置未出现正 domain gain，医疗与通用指标仍下降（约 −9% 医疗 / −13% 通用）。训练步数、lr 与参数更新方式是可能的影响因素，后续可比较两类调整：
+   - **增加 iter / 调整 lr**（同时观察遗忘与 domain/general 数据配比的影响）
+   - **采用 PEFT（LoRA）** 将可训练参数限制在 adapter，冻结 base 权重
 
-   这正是 week13 的方向（LoRA + 更多 iter + 配比 ablation），且有了一个干净的 base 真实对照基线。
+   这些方向原计划在 week13 比较（LoRA + 更多 iter + 配比 ablation），已有真实语料运行可作为后续对照记录。
+
+   两类调整分别涉及优化预算和可训练参数范围。后续换模型、增加步数与采用 LoRA 同时发生，得到正 gain 的新配置；这些变化共同构成改进过程，LoRA 的单独贡献则需要匹配其他条件进行比较。
 
 4. **physics 是两侧共同噪声点**（假 +57%、真 +35%，都远高于其他 3 科的个位数）——0.8B 在高中物理本身接近随机，单科幅度别过度解读，看 4 科均值。
 

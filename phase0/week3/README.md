@@ -3,11 +3,11 @@
 > 目标: 从"用 API"到"理解 API 下面发生了什么"。做一次全量微调(不用 PEFT)。
 > 预计时间: 14-20 小时
 >
-> **审查状态**：`PARTIAL`。源码阅读材料和训练脚本存在；全量微调日志、峰值显存和 loss 曲线缺失。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：已完成源码阅读、框架比较与训练脚本；full FT 资源实测尚未运行。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 2 你看了 nanoGPT — 一个研究者写的简洁实现。这周看 HuggingFace Transformers — 工业界标准。你要对比两者的差距,理解"工程化"到底加了什么。
+> **前后衔接**: Week 2 阅读 nanoGPT 的简洁实现；本周对比 HuggingFace Transformers，梳理框架增加了哪些工程能力。
 >
-> **为什么学这周**: 你以后所有训练实验都用 HuggingFace 生态 (Trainer + PEFT + datasets)。如果不懂它底层在做什么,出了问题只能猜。读懂源码之后,Week 4 加 LoRA、Week 5-6 做 QLoRA SFT 就是加几行配置,而不是黑魔法。
+> **学习重点**: 阅读 Trainer、模型 forward 和数据管线，理解配置与训练行为之间的关系，为 Week 4 的 LoRA 和 Week 5–6 的 QLoRA SFT 提供实现依据。
 >
 > **思考锚点**: "HuggingFace 的 Trainer 和 nanoGPT 的训练循环,本质做的是同一件事。差距在于通用性 — 它多处理了哪些 edge case?"
 
@@ -15,7 +15,7 @@
 
 ## Day 1-2: Transformers 源码 — Model 部分
 
-> **思考**: HF 的 `LlamaForCausalLM.forward` 和你 Week 1 写的 `MiniGPT.forward` 流程几乎一样。找找最大的差异在哪里? (提示: KV cache)
+> **思考**: HF 的 `LlamaForCausalLM.forward` 与 Week 1 的 `MiniGPT.forward` 在流程上有哪些共同点和差异? (提示: KV cache)
 
 ### 做什么
 1. 源码安装: `git clone https://github.com/huggingface/transformers && pip install -e .`
@@ -42,7 +42,7 @@
 
 ## Day 3-4: Transformers 源码 — Trainer 部分
 
-> **思考**: Trainer 的 `training_step` 做了什么? 和你 Week 2 的 `train.py` 训练循环对比,多了哪些步骤?
+> **思考**: Trainer 的 `training_step` 做了什么? 与 Week 2 的 `train.py` 训练循环相比，多了哪些步骤?
 
 ### 做什么
 1. 阅读 `Trainer.training_step`: 一次迭代 = forward → loss → backward → 返回 loss dict

@@ -85,7 +85,7 @@ if val_loss < best_val_loss:
 
 ## 总结对照
 
-| 你已经会的（Week 1） | nanoGPT 额外教的（Week 2） |
+| Week 1 的实现 | Week 2 nanoGPT 的扩展 |
 |---------------------|--------------------------|
 | Transformer 架构 | 残差投影缩放 |
 | 手写 attention | 混合精度训练 |

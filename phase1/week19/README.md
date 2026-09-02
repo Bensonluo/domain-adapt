@@ -24,11 +24,11 @@
 
 ### 1. LM Studio 502 server-wide → 弃 HTTP，改 mlx_lm 直跑
 
-plan 原定 LM Studio serve（`127.0.0.1:1234`）。实测**所有模型**返回 502 空响应、0.1-0.3s 秒返（gateway 活着、inference 卡死），web 查证为 lmstudio 已知故障（context-length 重置 / server-wide generation wedge）。用户决策"should not even rely on lm studio" → 改 [`generate_teacher_answers.py`](generate_teacher_answers.py) 用 `mlx_lm.load` 一次 + 逐题 `mlx_lm.generate`，零 HTTP、可 resume、增量落盘。
+原方案通过 LM Studio serve（`127.0.0.1:1234`）生成数据。本地尝试的模型均返回 502 空响应，耗时约 0.1–0.3s，接口可达但未完成推理。因此改为在 [`generate_teacher_answers.py`](generate_teacher_answers.py) 中直接调用 `mlx_lm.load` 加载一次，再逐题调用 `mlx_lm.generate`，去掉 HTTP 服务依赖，保留断点续跑和增量落盘。
 
 ### 2. Gemma MLX thinking 关不掉 → 换 Qwen3-30B-A3B MLX
 
-中途试 Gemma-MLX（用户建议）：`apply_chat_template(enable_thinking=False)` kwarg 被静默吞，模型仍出 `<|channel>thought` 推理块 + tokenizer regex 警告。换 **Qwen3-30B-A3B-Instruct-2507-MLX**：`enable_thinking=False` 干净生效，首字符即字母 + 1-2 句概念解释，与 real 臂密度匹配。
+中途试 Gemma-MLX：`apply_chat_template(enable_thinking=False)` kwarg 被静默吞，模型仍出 `<|channel>thought` 推理块 + tokenizer regex 警告。换 **Qwen3-30B-A3B-Instruct-2507-MLX**：`enable_thinking=False` 干净生效，首字符即字母 + 1-2 句概念解释，与 real 臂密度匹配。
 
 ### 3. mlx_lm 0.31.3 API 变更：`temperature` 移出 generate 路径
 
@@ -73,7 +73,7 @@ A
 | mixed | 0.5637 | −0.003 | 0.6725 | +0.005 |
 | GRPO ref | 0.5687 | +0.0024 | 0.6725 | +0.005 |
 
-**per-task 拆解**：real 臂 −0.025 医学**几乎全砸在一个子任务**：
+**per-task 拆解**：real 臂医学指标下降 −0.025；所列子任务中，**clinical_knowledge 的下降幅度最大**：
 
 | CMMLU 子任务 | base | real | distill |
 |---|---|---|---|
@@ -83,6 +83,8 @@ A
 | virology | 0.64 | 0.61（−0.03） | 0.60（−0.04） |
 
 `clinical_knowledge` 单任务 −0.10 是 real aggregate 下降的主要来源；distill 同任务为 −0.02。这个差异是待验证信号，不能仅凭单 seed 归因给解释来源。
+
+分任务结果用于定位退化集中在哪些能力上。解释来源同时可能改变文本长度、风格和内容，后续可对同题样本的这些属性作比较，分析哪类差异与当前观察有关。
 
 （汇总 [`distill_summary.json`](../results/week19_distill/distill_summary.json)，loss_log / run_config / scores / preds 在 [`phase1/results/week19_distill/`](../results/week19_distill/)）
 

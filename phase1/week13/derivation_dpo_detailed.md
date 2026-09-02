@@ -70,7 +70,9 @@ $$
 
 ---
 
-## 3. 代入 Bradley-Terry：Z(x) 神奇抵消
+## 3. 代入 Bradley-Terry：成对奖励差中的 Z(x) 抵消
+
+chosen 与 rejected 对应同一个输入 x，因此奖励参数化中的 β log Z(x) 相同；两项相减时该项抵消。抵消来自成对比较共享输入这一结构，而不是对 Z(x) 数值的近似。
 
 人类偏好数据形如 $(x, y_w, y_l)$——$y_w$ 是 chosen，$y_l$ 是 rejected。
 **Bradley-Terry 模型**假设：偏好的概率 = reward 差的 sigmoid：

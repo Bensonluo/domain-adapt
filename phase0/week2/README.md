@@ -3,11 +3,11 @@
 > 目标: 理解 production-quality 的小型 GPT 实现每一个细节,在领域数据上跑通训练。
 > 预计时间: 14-20 小时
 >
-> **审查状态**：`MOSTLY_DONE / EVIDENCE_PARTIAL`。训练和样例存在，产物映射与正式验收待补。详见 [CORRECTIONS.md](CORRECTIONS.md)。
+> **本周交付**：已完成 nanoGPT 训练、不同 temperature 样例与复盘。详见 [CORRECTIONS.md](CORRECTIONS.md)。
 
-> **上周回顾**: Week 1 你手写了 Transformer 的核心模块 — autograd、attention、FFN、MiniGPT。但那是一个最简化的教学实现。这周你要看 Karpathy 的 nanoGPT,理解"从玩具到可复现研究"的工程差距在哪里。
+> **前后衔接**: Week 1 从 autograd、attention、FFN 到 MiniGPT 构建了简化实现。本周阅读 Karpathy 的 nanoGPT，对比教学实现与可复现实验所需的工程组件。
 >
-> **为什么学这周**: nanoGPT 是你从"理解原理"到"能跑真实实验"的桥梁。它覆盖了完整训练循环的每个工程细节 — 数据加载、LR 调度、混合精度、checkpoint。理解它之后,你在 Week 3 看 HuggingFace Trainer 就能分清"哪些是工程必要"和"哪些是框架抽象"。
+> **学习重点**: nanoGPT 覆盖数据加载、LR 调度、混合精度和 checkpoint 等训练环节。结合 Week 3 的 HuggingFace Trainer，比较训练循环的必要组件与框架提供的抽象。
 >
 > **思考锚点**: "从 MiniGPT 到 nanoGPT,哪些改动是性能优化,哪些是正确性保障?"
 

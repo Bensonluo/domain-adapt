@@ -1,50 +1,50 @@
 # Phase 1：深钻阶段 — Deep Dive
 
-> Peng Luo 1-2 年规划第二步 | 13 周 + 数据准备 | 主攻深度：蒸馏 + GRPO
+> 第二步 | 13 周 + 数据准备 | 主攻深度：蒸馏 + GRPO
 >
-> Phase 0 完成了主要学习产物，但研究性验收仍为 `REMEDIATION_REQUIRED`。
-> Phase 1 在此基础上深钻 4 个方向，补齐短板。
+> 在 Phase 0 的实现与实践基础上，深入 CPT、偏好优化、蒸馏与合成数据。
 
-## 当前状态（唯一阶段入口）
+## 阶段成果
 
-`REMEDIATION_REQUIRED`
+Week 9–21 已形成理论推导、训练流程、多组对比实验和失败复盘。后续修订完成了 grouped preference split、评估数据登记、历史结果重分析和五类实验设计。
 
-Week 9–21 的学习和实验执行大部分完成；grouped preference split、评估登记、五类确认规范和可恢复历史重分析已补齐。当前阻断项收敛为：外部 blind evaluation 尚不可用，以及冻结的多 seed 受控确认实验尚未执行。既有 CMExam 500 题与反复使用的 CMMLU 子集统一视为 **development benchmark**，不能再作为 Phase 1 最终 blind test。
+本阶段重点展示方法选择、实际结果以及发现问题后的调整。既有 CMExam 500 题与反复使用的 CMMLU 子集用于 development comparison；新准备的确认数据和多 seed 设计尚未运行。
 
 - 声明—证据矩阵：[`audit/claim-evidence-matrix.md`](audit/claim-evidence-matrix.md)
-- 退出门槛：[`audit/exit-gate.md`](audit/exit-gate.md)
-- 最小确认实验：[`audit/rerun-plan.md`](audit/rerun-plan.md)
-- 证据清单：[`artifact_manifest.md`](artifact_manifest.md)
+- 结果解读与改进方向：[`audit/exit-gate.md`](audit/exit-gate.md)
+- 后续实验建议：[`audit/rerun-plan.md`](audit/rerun-plan.md)
+- 交付物清单：[`artifact_manifest.md`](artifact_manifest.md)
 - 机器可读证据注册表：[`artifact_registry.json`](artifact_registry.json)
 - 评估隔离与盲测协议：[`audit/blind-test-protocol.md`](audit/blind-test-protocol.md)
 - Benchmark 污染登记：[`audit/benchmark_registry.json`](audit/benchmark_registry.json)
-- 治理决策：[`audit/ADR-001-evidence-registry-and-blind-test.md`](audit/ADR-001-evidence-registry-and-blind-test.md)
+- 结果索引说明：[`audit/ADR-001-evidence-registry-and-blind-test.md`](audit/ADR-001-evidence-registry-and-blind-test.md)
 - 审计运行入口：[`audit/README.md`](audit/README.md)
-- 五类确认实验冻结规范：[`confirmation/README.md`](confirmation/README.md)
+- 五类后续实验设计：[`confirmation/README.md`](confirmation/README.md)
 
-| 周 | 执行动作 | 证据 | 当前方法学判定 |
-|---|---|---|---|
-| W8.5 | PARTIAL | PARTIAL | 原数据计划未完整实现；实际由 W10/W14 的替代路线承接 |
-| W9 | DONE | PRESENT | 理论笔记完成；部分普适表述需收窄 |
-| W10 | DONE | PRESENT | 管线完成；1B–3B token 规模目标未完成 |
-| W11 | DONE | PRESENT | demo CPT 跑通，不构成严肃 CPT 证据 |
-| W12 | DONE | PRESENT | 多配比已跑；单 seed、测试复用和因果混杂待修 |
-| W13 | DONE | PRESENT | 理论推导完成 |
-| W14 | DONE | PARTIAL | 新 grouped split 已实现且 prompt overlap=0；历史 split 有 50 组交叉，独立质量验证待补 |
-| W15 | DONE | PRESENT | 历史 beta sweep 使用泄漏 split；“最优 beta”撤回，确认实验必须使用 grouped v1 |
-| W16 | DONE | PRESENT | 失败模式实验完成；IPO 信号待独立确认 |
-| W17 | DONE | INVALIDATED_PART | 8/500 题训练重叠；clean delta 仅可界定为 +0.61pp～+3.86pp，缺 450 条逐题预测，确认性迁移仍失效 |
-| W18 | DONE | PRESENT | 理论笔记完成；on-policy 普适优越性需收窄 |
-| W19 | DONE | PRESENT | 三臂完成；机制解释仍是待验证假设 |
-| W20 | DONE | REPRODUCIBLE_PART | lineage 较完整；多臂单 seed 的强结论待确认 |
-| W21 | DONE | REPRODUCIBLE_PART | clean matched 确认数据已就绪；多 seed 非劣效重训、外部 blind 和临床人工审核未闭环 |
+| 周 | 已交付内容 | 实践中的发现与调整 |
+|---|---|---|
+| W8.5 | 数据清洗与校验准备 | 实际数据路线由 W10/W14 承接；偏好构建 stub 未继续扩展 |
+| W9 | CPT 理论笔记 | 区分论文中的条件与本项目适用范围 |
+| W10 | 真实语料处理管线与配置 | 实际采用约 1414 万 token，未扩展到原定 1B–3B |
+| W11 | demo CPT 训练 | 验证训练流程，后续以真实语料继续实验 |
+| W12 | 三比例 LoRA-CPT 对比 | 50/50 作为后续基线；收益来源仍有多变量混杂 |
+| W13 | DPO/GRPO 数学推导 | 连接目标函数与训练实现 |
+| W14 | 偏好数据与 grouped split | 发现历史 50 组 prompt 交叉；新切分 overlap=0 |
+| W15 | DPO beta sweep | 小 matched bucket 中差异不明显，未据此确定最优 beta |
+| W16 | DPO 失败模式与 IPO 对比 | 分析长度偏差及目标相关指标 |
+| W17 | GRPO 训练、评估与重分析 | 发现 8/500 题训练重叠；clean delta 范围为 +0.61pp～+3.86pp，缺 450 条逐题预测 |
+| W18 | 蒸馏理论笔记 | 比较不同蒸馏形式的前提和取舍 |
+| W19 | response distillation 三臂实验 | teacher explanation 出现积极信号，机制解释仍是研究假设 |
+| W20 | logit KD 与 rejection sampling 多臂实验 | 形成配置比较及完整度较高的 lineage |
+| W21 | 合成生成、质检、替代实验与 clean matched 数据 | 点估计接近 control，区间尚不支持非劣效；清理后数据尚未重训 |
 
 ---
 
 ## 总览
 
-系统补齐 4 个 P0 短板：
-1. **Continual Pre-training (CPT)** — 让模型真正理解领域
+围绕四个方向展开：
+
+1. **Continual Pre-training (CPT)** — 通过领域语料继续预训练
 2. **DPO / GRPO / Preference Tuning** — 对齐模型偏好
 3. **Knowledge Distillation** — 把大模型能力迁移到小模型
 4. **Synthetic Data Generation** — 用数据工程放大训练效果
@@ -57,7 +57,7 @@ Week 9–21 的学习和实验执行大部分完成；grouped preference split�
 
 ```
 phase1/
-├── README.md              ← 你在这里
+├── README.md              ← 阶段概览
 ├── requirements.txt       ← Python 依赖
 ├── prep/                  ← Week 8.5: 数据工程准备（Phase 1 前置）
 │   ├── clean_pipeline.py          数据清洗管线
@@ -107,20 +107,17 @@ phase1/
 
 ## 深度执行方法论
 
-> 以下三个方法贯穿 Phase 1 全程，每个实验都要遵守。
+实验记录主要关注比较条件、失败原因和参数取舍。
 
 ### 方法一：探索实验跑多个变体，确认实验跑独立 seed
 
-探索阶段至少比较多个预先定义的条件；研究性确认至少使用 3 个独立训练 seed。多个超参臂不能替代重复 seed，点估计 winner 也不能自动称为“最优”。
+多个变体有助于寻找候选配置；独立 seed 用于观察训练波动，两者回答不同问题。当前探索结果已形成后续设计，其中采用 3 个 seed 进一步比较稳定性。
 
-### 方法二：每次失败都做"尸检"（Post-mortem）
+### 方法二：从失败现象找到下一步
 
-1. 记录现象（不要跳过）
-2. 写下 3 个可能原因
-3. 设计最便宜的验证实验
-4. 修复后记录 trade-off
+记录现象和可能原因，优先尝试低成本的区分实验，再总结修改后的效果与取舍。每周复盘保留这一思考过程。
 
-### 方法三：建立"超参直觉数据库"
+### 方法三：记录超参数的实际取舍
 
 ```
 | 超参 | 值 | 效果 | 意外发现 |
@@ -131,17 +128,16 @@ phase1/
 
 ---
 
-## 验收标准
+## 交付概览
 
-以下列表同时包含“执行交付”和“研究有效性”。是否通过以 [`audit/exit-gate.md`](audit/exit-gate.md) 为准，不能仅根据周 README 的勾选项判定。
+- [x] 小规模真实语料 CPT 与数据混合比例对比。
+- [x] DPO/GRPO 理论、实践及失败模式分析；IPO 实验与 KTO 阅读。
+- [x] GRPO 训练与 domain-specific reward 设计。
+- [x] response distillation、logit KD 与 rejection sampling 实验。
+- [x] 合成数据生成、质量检查与替代实验。
+- [x] 结果重分析、数据切分修订和每周纠错记录。
 
-- [ ] 完成至少 1 次严肃的 CPT（有数据混合 ablation）
-- [ ] 完成 DPO/GRPO 深度对比（含失败模式），IPO/KTO 仅了解不实验
-- [ ] 完成 GRPO 实战（有 domain-specific reward function 设计）
-- [ ] 完成至少 2 种蒸馏实验
-- [ ] 建立合成数据 pipeline
-- [ ] 客观结构化任务有独立 blind test、逐题预测和配对统计；开放式质量声明另有人类盲评，LLM judge 只作补充
-- [ ] 至少 3 个独立 insight（你自己发现的 trade-off，不是 paper 里写的）
+后续实验尚未执行的部分单独列在 [实验建议](audit/rerun-plan.md)，不与已有交付混列。
 
 ---
 

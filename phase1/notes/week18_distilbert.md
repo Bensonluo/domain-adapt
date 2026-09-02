@@ -137,11 +137,13 @@ L_cos: cosine embedding loss
 | 去 L_cos（蒸馏 + MLM） | -0.31 |
 | **完整 triple loss + 随机初始化** | **-3.69** |
 
-**我的解读（重点）**：
-1. **初始化最关键**：随机初始化直接 -3.69，比去掉任何一个 loss 都惨。说明"从一个好的起点出发"是蒸馏能成功的地基。
-2. **cosine loss 贡献最小**（去掉只 -0.31），但作者仍保留，因为边际收益为正。
-3. **MLM loss 有用**（去掉 -1.46），证明 student 不能纯抄 teacher，要有自己的目标。
-4. **三个 loss 叠加 > 任何一个单独**，证实 triple loss 设计的必要性。
+**消融结果分析**：
+1. **初始化的影响**：在所列消融中，随机初始化的变化为 -3.69，下降幅度大于其他设置，说明初始化是该实验中的重要因素。
+2. **cosine loss 的影响**：移除后的变化为 -0.31，是所列 loss 消融中较小的下降；完整配置包含该项。
+3. **MLM loss 的影响**：移除后的变化为 -1.46，支持该设置下保留 student 自身训练目标的作用。
+4. **联合 loss 的比较**：完整配置优于表中所列的 loss 消融配置，支持该实验设置下的 triple loss 组合。
+
+这些消融是在同一完整配置上移除组成项，反映各项在这一组合中的增量作用；初始化比较则改变了训练起点。两类结果共同解释配置选择，但不等同于各组成项在所有模型和任务上的固定贡献排序。
 
 ### 训练成本
 
@@ -187,9 +189,9 @@ Feature distillation (DistilBERT 加的 L_cos):
 
 ---
 
-## 我的 takeaway
+## 要点总结
 
 1. **蒸馏可以传递 hard target 之外的分布信息**：soft target 携带 teacher 的相对概率结构，可能帮助 student 泛化；收益取决于 teacher 质量、温度、loss 和任务，不能写成固定“1 bit vs 更高效”。
-2. **初始化是被低估的杠杆**。从 teacher 隔层拷贝权重，比随机初始化多保住 3.69 个 GLUE 点——这在工程上几乎免费，但收益比任何一个 loss 都大。做蒸馏时，"从 teacher 的好起点出发"是第一原则。
-3. **triple loss 是 feature distillation 的模板**：response（学输出）+ 自身任务（学能力）+ feature（学表示）。后续所有 feature 蒸馏工作都是在这个框架上加料。
+2. **初始化的工程选择**。从 teacher 隔层拷贝权重，相比随机初始化高出 3.69 个 GLUE 点；这一结果可为具备兼容权重的蒸馏实验提供初始化参考。
+3. **triple loss 的组成**：response（输出分布）+ 自身任务（任务目标）+ feature（中间表示）。这一组合可作为分析其他 feature 蒸馏设计的参考。
 4. **DistilBERT 是蒸馏的"奠基"**，但它的 teacher 是同类小模型（BERT→小 BERT）。真正的范式跃迁是后面用 GPT-4 当 teacher 蒸到 7B（Zephyr）——把"大模型的能力"低成本搬到"可部署的小模型"。三篇串起来读才完整（见 [../week18_distillation_comparison.md](week18_distillation_comparison.md)）。

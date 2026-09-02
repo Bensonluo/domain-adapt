@@ -157,31 +157,33 @@
 ## 四、决策框架：什么场景用哪种
 
 ```
-你的蒸馏目标是什么？
+蒸馏目标是什么？
 │
-├─ 「我要把大模型压缩成可部署的小模型」
-│   └─ 你有 teacher 权重吗?
+├─ 「将大模型压缩为可部署的小模型」
+│   └─ 是否可获取 teacher 权重?
 │       ├─ 有 → Feature distillation (DistilBERT 范式)
 │       │       triple loss: response + MLM + feature
 │       └─ 没有(只有 API) → Response (SFT 在 teacher 输出上)
 │
-├─ 「我要让小模型学会对话/指令跟随」
+├─ 「提升小模型的对话与指令跟随能力」
 │   └─ Response distillation
 │       数据层: Self-Instruct 自举造指令
 │       训练层: SFT on teacher 输出 (Alpaca/Vicuna 路线)
 │
-├─ 「我要让小模型对齐人类偏好」
+├─ 「使小模型输出更符合人类偏好」
 │   └─ Response + 偏好蒸馏 (Zephyr 范式)
 │       dSFT (Self-Instruct 造数据) → AIF (GPT-4 打分) → dDPO
 │       不需人工标注, 不需 PPO
 │
-└─ 「我要让模型获得 reasoning 能力(数学/代码)」
+└─ 「提升模型的 reasoning 能力(数学/代码)」
     └─ On-policy distillation (R1 范式)
         student 采样 → 规则 reward → rejection sampling → SFT
         可能发现示范外策略；是否超过 teacher 需独立验证，成本通常较高
 ```
 
-**实战速记**（对应我的垂域项目）：
+**领域任务的应用参考**：
+
+路线选择主要取决于可访问的教师信息、目标任务与运行预算。能够访问 hidden state 的方案可增加表示对齐目标；只有 API 输出时可采用文本或偏好反馈；采样式方案还涉及候选生成、评分和迭代成本。
 - **压缩部署** → Feature（有权重）或 Response（只有 API）
 - **领域对话** → Self-Instruct 造领域数据 + SFT
 - **领域对齐** → Zephyr 范式（领域 dSFT + AIF + dDPO）
@@ -205,7 +207,7 @@
 3. Zephyr (2023) — 蒸馏的"对齐落地"
    回答"蒸什么 + 全流程": 把 SFT + 对齐 都蒸馏化
    dSFT (Self-Instruct 造数据) + AIF (GPT-4 打分) + dDPO
-   7B 蒸馏模型干翻 70B RLHF 模型, 证明"对齐可二手获取"。
+   7B 蒸馏模型在所列评测中高于 70B RLHF 模型，展示了利用教师反馈进行对齐的路线。
 
 三者递进:
   技术 (DistilBERT) → 数据 (Self-Instruct) → 对齐 (Zephyr)
@@ -319,24 +321,25 @@ DistilBERT 的特例 (为什么它不用 projection):
   4. 在线计算
      每轮都要 student 前向生成 (而非读静态数据集), GPU 开销大
 
-成本对比 (直觉):
+成本对比 (定性估计):
   Response:  $$  (API 费 + 一次训练)
   Feature:   $$$ (需要 teacher 权重, 但训练一次)
   On-policy: $$$$$ (多轮 × 大量采样 × 在线生成)
 
 权衡:
-  效果: On-policy > Feature > Response
-  成本: On-policy > Feature > Response
-  没有免费午餐 —— 效果和成本正相关。
+  效果假设: On-policy > Feature > Response（具体排序取决于任务与配置）
+  成本估计: On-policy > Feature > Response（随采样量、模型与训练预算变化）
+  效果提升可能伴随额外成本，二者关系可通过同任务比较分析。
+  上述排序用于表达一种待验证的投入与收益设想；实际比较同时记录模型、数据、采样量及训练预算。
 
-  实战策略: 先用 Response/Feature 拿到 80% 的效果 (便宜),
-           最后用 On-policy 精修最难的部分 (reasoning)。
+  分阶段策略设想: 先用 Response/Feature 达到约 80% 的目标效果（示意比例，非实测结果）,
+           再用 On-policy 研究剩余的 reasoning 问题。
            R1 就是这个思路: SFT 打底 → GRPO 攻 reasoning。
 ```
 
 ---
 
-## 七、和我整体学习路径的衔接
+## 七、与整体学习路径的衔接
 
 ```
 CPT (week9-12)         SFT (week14-17)         蒸馏 (week18)         对齐 (week13)

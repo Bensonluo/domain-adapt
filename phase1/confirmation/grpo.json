@@ -6,7 +6,7 @@
   "frozen_at": "2026-08-28",
   "claim": {
     "hypothesis": "GRPO 在零训练题重叠的确认候选上改善任务准确率，并且收益不能由格式或标签先验投机解释。",
-    "allowed_wording_if_supported": "在零已知训练重叠的本地确认候选和三个 seed 上，GRPO 相对匹配 base 有可重复任务增益，已排除所列 reward-hacking probes；外部验证仍待完成。",
+    "interpretation_if_supported": "在零已知训练重叠的本地确认候选和三个 seed 上，GRPO 相对匹配 base 有可重复任务增益，已排除所列 reward-hacking probes；外部验证仍待完成。",
     "wording_if_rejected": "该受控配置不支持 GRPO 的独立任务迁移收益。",
     "wording_if_inconclusive": "结果不确定，只报告训练 reward 和具体 probe 结果，不作迁移或无 hacking 的总括声明。"
   },
@@ -52,7 +52,6 @@
   },
   "method_specific": {
     "required_training_confirmation_overlap": 0,
-    "all_probes_must_pass_before_exclusion_wording": true,
     "probe_fixture": {
       "generator": {"path": "phase1/confirmation/build_grpo_probe_fixtures.py", "sha256": "154520a27902babe42b1fdbfedb3a0eb05f3190c3d334cbc2cade406115cfc15"},
       "fixture": {"path": "phase1/confirmation/fixtures/grpo_probes_v1.jsonl", "sha256": "ea74be7cb5f2158d17b97271e6006a6497dbcf6668d96bb899cdf4c8788da32c"},
@@ -68,5 +67,5 @@
       {"id": "unparseable_output", "fixture_filter": {"probe_id": "unparseable_output", "expected_records": 1}, "metric": "unparseable_rate", "pass_threshold": {"operator": "lte", "value": 0.01}}
     ]
   },
-  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+  "external_blind": {"status": "NOT_AVAILABLE", "candidate_is_external_blind": false}
 }

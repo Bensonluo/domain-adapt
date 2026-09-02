@@ -4,7 +4,7 @@
 
 > 目标: 在 Qwen3.5-0.8B base model 上跑第一次 CPT，监控训练过程。
 > 预计时间: 8-12 小时
-> 框架: **Apple MLX (mlx-lm)** — 适配 M3 Max，比 transformers+torch 在 Mac 上快很多、内存省
+> 框架: **Apple MLX (mlx-lm)** — 本次采用的 M3 Max 训练框架；与 transformers+torch 的性能差异需结合相同配置的实测比较。
 
 > **思考锚点**: "CPT 的 loss 曲线和 SFT 的 loss 曲线有什么不同？为什么？"
 
@@ -15,11 +15,13 @@
 | 维度 | transformers + torch (mps) | mlx-lm (Apple 原生) |
 |------|---------------------------|---------------------|
 | 后端 | MPS 兼容层 | Apple Silicon 原生 (Unified Memory) |
-| 0.8B 全量 CPT | 勉强跑，慢 | 轻松，batch 4 跑得动 |
-| 数据格式 | `datasets` + chat template | `train.jsonl` 纯 text（CPT 本就该如此） |
-| CLI | HF Trainer 复杂配置 | `python -m mlx_lm lora` 一行起训 |
+| 0.8B 全量 CPT | 当前材料未提供与 MLX 同条件的性能结果 | 参考配置为 batch 4；本次已运行 demo 的 batch 为 1 |
+| 数据格式 | `datasets`；文本格式由训练目标确定 | 本次采用含纯 `text` 字段的 `train.jsonl` |
+| CLI | 通过 HF Trainer 配置训练 | 通过 `python -m mlx_lm lora` 启动训练 |
 
-> CPT 用纯 `text` 字段、不套 chat template、每个 token 都算 loss（区别于 SFT 的 completion-only）——这正好和 mlx-lm 的原生数据格式对齐。
+> 本次 CPT 使用纯 `text` 字段和全序列 loss，与所用 mlx-lm 数据接口对应；SFT 的 completion-only 目标另作比较。
+>
+> 参考配置与已运行配置分开记录：下方示例使用 batch 4，实际 demo 的 [`run_config.json`](../results/week11_cpt_pure/run_config.json) 记录 batch_size=1、15 条训练样本和 1 条验证样本。框架选择已完成，但这次运行不是两套框架的同条件性能对比。
 
 ---
 

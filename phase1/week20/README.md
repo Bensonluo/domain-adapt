@@ -2,9 +2,7 @@
 
 > 方法学纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。本周实际覆盖 logit-level KD 与一轮 student-sampled rejection-sampling SFT；单 seed 多臂 winner 不构成普适机制结论。
 
-> **Phase1 最关键一段**。用户原话:「logit KD 也要做深,on-policy 也要,全部都要,缺什么补什么,不允许任何马虎、敷衍、偷懒」。
->
-> 两个核心问题(week18 思考锚,本周干净回答):
+> 本周围绕两个核心问题展开：
 > 1. **学 teacher 的 soft logit 分布(内部表征)vs hard argmax 输出(week19),差距在哪?** → Part A
 > 2. **student 在自己分布上探索(on-policy)vs 学 teacher 分布(off-policy),差距在哪?能超越 teacher 吗?** → Part B
 

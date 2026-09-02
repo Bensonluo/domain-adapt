@@ -4,7 +4,7 @@
   "claim": {
     "claim_id": null,
     "hypothesis": null,
-    "allowed_wording_if_supported": null,
+    "interpretation_if_supported": null,
     "wording_if_rejected": null,
     "wording_if_inconclusive": null
   },

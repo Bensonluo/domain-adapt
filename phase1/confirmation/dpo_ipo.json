@@ -6,7 +6,7 @@
   "frozen_at": "2026-08-28",
   "claim": {
     "hypothesis": "在 grouped preference split 与匹配 SFT baseline 下，DPO 或 IPO 可改善独立任务结果，而非只改善同构 log-probability 指标。",
-    "allowed_wording_if_supported": "在 grouped v1、三个 seed 和独立任务指标上，指定偏好目标相对匹配 SFT baseline 有可重复改善；结论限于本地确认候选，外部验证仍待完成。",
+    "interpretation_if_supported": "在 grouped v1、三个 seed 和独立任务指标上，指定偏好目标相对匹配 SFT baseline 有可重复改善；结论限于本地确认候选，外部验证仍待完成。",
     "wording_if_rejected": "该受控实验不支持偏好优化相对匹配 SFT baseline 的任务收益。",
     "wording_if_inconclusive": "DPO/IPO 的方向性差异不确定，不宣称最佳 beta 或 IPO 普适优越。"
   },
@@ -49,5 +49,5 @@
     "stopping_rule": "one fixed epoch; no development-selected stopping"
   },
   "method_specific": {"grouped_prompt_overlap_required": 0, "independent_outcome_metric": "cmexam_accuracy", "matched_sft_baseline_required": true},
-  "external_blind": {"status": "REQUIRED_NOT_AVAILABLE", "required_for_phase_exit": true, "candidate_is_external_blind": false}
+  "external_blind": {"status": "NOT_AVAILABLE", "candidate_is_external_blind": false}
 }

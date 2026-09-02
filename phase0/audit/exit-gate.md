@@ -1,39 +1,21 @@
-# Phase 0 退出门槛
+# Phase 0 结果解读与改进方向
 
-## 状态定义
+Phase 0 的交付包括基础实现、数学推导、训练实践和评估报告。不同材料回答不同问题：实现展示工程方法，推导解释机制，实验记录具体配置下的观察。
 
-状态按“执行、证据、有效性、处置”四类使用；组合标签（如 `EXTERNAL_PARTIAL`、`INVALIDATED_PART`）表示同时满足对应定义，不是新的通过等级。
+## 结果如何解读
 
-- `DONE`：执行动作完成。
-- `PRESENT`：有可定位产物，但未必可复现。
-- `REPRODUCIBLE`：数据、配置、代码、日志和结果足以重跑。
-- `PARTIAL`：仅满足部分目标或存在范围限制。
-- `EXTERNAL`：证据位于其他仓库或系统；必须固定 commit/版本与运行 manifest 才可参与验收。
-- `UNVERIFIED`：声明尚无足以判定真假的受控证据。
-- `VERIFIED`：证据支持对应声明，且主要混杂已控制。
-- `INVALIDATED`：当前证据与声明矛盾或实验设计不能回答该问题。
-- `INVALIDATED_CAUSAL`：观测数字可保留，但因混杂不能归因给声明中的原因。
-- `INVALIDATED_PART`：复合交付中至少一个核心子声明无效；其余部分必须分别标状态。
-- `RETRACTED`：旧声明已从当前总结和决策中永久撤回；错误历史保留，但不再作为待证明声明。
-- `REPLACED`：旧声明已由范围更窄、证据可映射的新声明取代；必须链接新 claim ID。
-- `WAIVED`：明确放弃并记录理由，不再计入退出标准。
+- 机构匹配的 Top-1 79.75%→98.75% 是两条完整推理链路的比较。runtime、解码等也发生变化，因此单独的 SFT 贡献尚未分离。
+- 随机矩阵 SVD 演示说明分解与能量计算，不是实际模型参数更新的测量。
+- masking 实现明确了训练目标，其相对效果还没有训练消融结果。
+- Week 6 和 Week 8 的外部案例采用不同模型、任务和评估配置，分别展示。
+- 开放式 judge 和人工评分目前是原型与模板；已运行的是结构化评估。
 
-状态迁移规则：`UNVERIFIED → VERIFIED/INVALIDATED/WAIVED`；`INVALIDATED → RETRACTED`，或在新证据与新 claim ID 下标记 `REPLACED`。不得删除错误行来“通过”验收，也不得把旧声明直接从 `INVALIDATED` 改成 `VERIFIED` 而不保留原证据和替代声明。
+## 可选择的改进
 
-## 通过条件
+若重点是解释微调收益，可以先做同 runtime、同量化、同 prompt 与解码的 base/adapter 比较。若重点是训练目标，可以比较 masking 方案；若重点是 rank 选择，可以结合真实更新矩阵与下游效果分析。
 
-Phase 0 只有同时满足下列条件才能从 `REMEDIATION_REQUIRED` 改为 `PASSED`：
+多 seed 有助于估计训练波动，逐题预测支持配对统计，新来源样本有助于观察分布迁移。开放式或临床应用的问题可进一步采用相应专业评审。具体投入取决于要回答的问题，详见 [后续实验建议](rerun-plan.md)。
 
-1. 必选产物都有稳定路径；外部证据固定到 commit、数据版本、配置和结果文件。
-2. Week 3 全量微调资源实验已完成，或正式标记 `WAIVED` 并修改阶段目标。
-3. masking 效果与数据质量/数量至少完成最小受控实验。
-4. LoRA/SVD 不再引用随机矩阵作为真实 ΔW 证据；如保留经验数字，必须来自真实 full-FT 更新。
-5. base 与 finetuned 使用同 runtime、量化、prompt、模板、解码和完整同一评估集重跑。
-6. 当前反复使用的评估集降级为 dev；另有冻结后只运行一次的 blind test。
-7. 结构化任务保存逐题预测并报告 paired CI/McNemar；至少 3 个训练 seed。
-8. 若阶段仍声称覆盖开放式能力，则完成 blind human evaluation、至少两名评分者和分维度 IAA；LLM judge 只作为补充。
-9. Phase 0 总结中的每个结果性声明都能映射到 `claim-evidence-matrix.md`；所有仍在使用的核心声明均为 `VERIFIED` 或明确 `WAIVED`。历史错误必须保留为 `RETRACTED/REPLACED`，但不阻塞退出。
+## 结果索引中的标签
 
-## 当前判定
-
-`REMEDIATION_REQUIRED`。学习性主体完成，但研究性验收未通过。
+现有索引保留实验复盘标签，便于追溯：`PRESENT/DONE` 描述已有产物或已执行步骤；`PARTIAL/UNVERIFIED` 说明某个问题的记录或实验还不完整；`INVALIDATED/RETRACTED/REPLACED` 记录旧解释的问题及修订；`EXTERNAL` 表示材料位于外部仓库。这些标签描述具体条目的记录状态，与项目交付情况分别说明。

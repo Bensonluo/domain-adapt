@@ -111,7 +111,7 @@ def _generate_synthetic_texts(
 ) -> list[str]:
     """生成领域 / 通用文本样例。
 
-    真实数据留到训练前下载 (用户要求: 现在不下载)。
+    演示阶段使用合成数据；真实数据在训练前下载。
     合成数据只为跑通 pipeline + 验证 4 种配比逻辑, 不代表真实分布。
     """
     rng = random.Random(seed)

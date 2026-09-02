@@ -28,8 +28,8 @@
           用 Step 1 的 dSFT 模型当 reference，在偏好对上跑 DPO
           → 不用 PPO 在线采样，离线就能优化偏好
 
-结果: Zephyr-7B 在 MT-Bench 上 7.34，超过 Llama2-Chat-70B（6.86）！
-      一个 7B 蒸馏模型，干翻 70B RLHF 模型。
+结果: Zephyr-7B 在 MT-Bench 上为 7.34，Llama2-Chat-70B 为 6.86。
+      在这一评测中，7B 蒸馏模型的分数高于所比较的 70B RLHF 模型。
 
 一句话：蒸馏不仅能传"能力"(SFT)，还能传"对齐"(DPO)。
       把 InstructGPT 的三阶段（SFT+RM+PPO）全替换成蒸馏版（dSFT+AIF+dDPO），
@@ -120,8 +120,8 @@
 | Claude 2 | - | RLHF | 8.06 | 91.36 |
 | GPT-4 | - | RLHF | 8.99 | 95.28 |
 
-- **7B 里 SOTA**：Zephyr 7.34，碾压所有 7B 对手（含 dPPO 的 Xwin）
-- **超过 Llama2-Chat-70B**（6.86）：一个 7B 蒸馏模型，在 MT-Bench 上干翻 70B + RLHF + 大量人工反馈的模型！这是当时最震撼的结果。
+- **7B 模型比较**：Zephyr 为 7.34，高于表中列出的其他 7B 模型（含 dPPO 的 Xwin）
+- **与 Llama2-Chat-70B 比较**（6.86）：该 7B 蒸馏模型在 MT-Bench 上的分数高于所比较的 70B、采用 RLHF 和人工反馈的模型。
 - 但 AlpacaEval 上仍略输 Llama2-Chat-70B（90.6 vs 92.66），且数学/编码弱（见 Figure 1 分项）
 
 ### Ablation：每一步都有用吗？（Table 3）
@@ -190,7 +190,9 @@ BUT: 如果 SFT 训超过 1 epoch，DPO 训久了反而掉分
 
 ---
 
-## 局限性（论文承认 + 我补充）
+## 局限性与分析
+
+比较结果按评估指标分别解读：MT-Bench 与 AlpacaEval 的相对排名不同，说明模型优势与评价任务、评分方式有关。将这些差异一并展示，比单一总分更能说明训练方案的取舍。
 
 ```
 1. 评测偏见
@@ -255,15 +257,15 @@ Zephyr 的特殊性:
   Zephyr (dDPO): offline, 偏好驱动, 传"对齐风格"
   R1 (GRPO):    online, 规则 reward 驱动, 探索"推理能力"
   → Zephyr 适合"对话/写作", R1 适合"数学/代码"
-  → 我的垂域方向: 对齐用 DPO/Zephyr 范式, reasoning 用 GRPO 范式
+  → 领域任务的候选路线: 对齐可比较 DPO/Zephyr 范式, reasoning 可比较 GRPO 范式
 ```
 
 ---
 
-## 我的 takeaway
+## 要点总结
 
 1. **Zephyr 是"对齐蒸馏"的里程碑**。它证明了：对齐（alignment）这个原本只有 RLHF 能做的事，可以纯靠大模型 API + DPO 完成，不需要人工标注。这把开源模型的能力门槛大幅拉低。
 2. **核心洞察：对齐信号可以"二手获取"**。GPT-4 当裁判 = 复用 OpenAI 投入的海量 RLHF 偏好。用 teacher 的"判断"代替人工"判断"，是 distillation 在对齐层面的体现。
 3. **dSFT-2 ablation 是最反直觉的发现**：直接 SFT 好答案（学 y_w 输出）反而不如 DPO（学 w>l 的相对关系）。这印证了 week13 的观点——**偏好学习的"相对性"比模仿学习的"绝对性"更高效**。
-4. **SFT 是 DPO 的地基，不可省**。跳过 SFT 直接 DPO，模型连 chat template 都学不会。这和 week13 的结论完全一致：**先 SFT 再 DPO/GRPO** 是对齐管线的铁律。
-5. **对我的垂域项目的直接启示**：如果要对齐垂域 7B 模型，Zephyr 范式（领域 dSFT + GPT-4 打分造领域偏好 + dDPO）比从头搞 RLHF 现实得多。这条路线我会用到后续 week。
+4. **SFT 与偏好优化的衔接**。本方案先进行 SFT，再进行 DPO，使偏好优化从具备对话格式训练的模型开始。**先 SFT 再 DPO/GRPO** 可作为后续实验的候选训练顺序。
+5. **领域模型的应用参考**：对齐领域 7B 模型时，可比较 Zephyr 范式（领域 dSFT + GPT-4 评分构建偏好数据 + dDPO）与 RLHF 的实现成本和效果，作为后续实验路线。

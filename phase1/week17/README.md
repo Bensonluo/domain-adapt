@@ -14,7 +14,7 @@
 
 | 决策 | 选择 | 依据 |
 |---|---|---|
-| reward | **MCQ 答对率**（用户决策） | 开放式 reward 区分度和验证成本更高；MCQ reward 客观且易解析，但仍可能受格式、标签先验和任务窄化影响 |
+| reward | **MCQ 答对率** | 开放式 reward 区分度和验证成本更高；MCQ reward 客观且易解析，但仍可能受格式、标签先验和任务窄化影响 |
 | base | [`50_50_fused`](../results/week12_lora_cpt/50_50_fused)（**非 stub 过时的 week11_cpt_pure**） | 与 DPO（week15/16）同口径，delta 可比 |
 | 数据 | **CMExam**（[`fzkuji/CMExam`](https://huggingface.co/datasets/fzkuji/CMExam)，68K 简体医学选择题）→ 8K train + 500 holdout（test split，全程未训） | 小数据 hf-mirror 可下；纯简体；客观答案可校验 |
 | loss | **`dapo`**（TRL v1.8.0 默认） | 自带长度偏差消除（呼应 week16 IPO）；源码 grpo_trainer.py L2949 |
@@ -26,11 +26,11 @@
 
 ## ⚠️ 三个实测发现（写代码前没想到，跑 smoke/learncheck 才抓到）
 
-### 1. MPS 风险解除（plan 里两 agent 证据矛盾，实测裁断）
+### 1. 用本机 smoke test 检查 MPS 兼容性
 
-plan 阶段两 agent 冲突：悲观方举 TRL [#4692](https://github.com/huggingface/trl/issues/4692)（M4 Max GRPO `mps_matmul` LLVM crash）+ PyTorch [#180776](https://github.com/pytorch/pytorch/issues/180776)（MPS bf16 `F.linear` 静默坏值，报告者点名 GRPOTrainer），公开成功案例全是 MLX-GRPO。**DPO 先例不成立**（DPO 无 generation rollout，GRPO 每步 on-policy generate）。
+环境选型时参考了 TRL [#4692](https://github.com/huggingface/trl/issues/4692)（M4 Max GRPO `mps_matmul` LLVM crash）和 PyTorch [#180776](https://github.com/pytorch/pytorch/issues/180776)（MPS bf16 `F.linear` 数值异常）中的兼容性风险。**DPO 能运行不能直接证明 GRPO 可运行**：DPO 不含 generation rollout，而 GRPO 每步进行 on-policy generate，因此单独执行本机 smoke test。
 
-**smoke 实测（max_steps=2）裁断**：不崩、reward 非 NaN（0.5）、`frac_reward_zero_std=0`（每组有对有错=真 advantage 信号）→ **TRL+MPS+GRPO 在本机可跑，不需切 MLX**。环境兜底 `MTL_TIMEOUT=0`+`PYTORCH_ENABLE_MPS_FALLBACK=1` 仍保留。
+**smoke 实测（max_steps=2）**：未崩溃、reward 非 NaN（0.5）、`frac_reward_zero_std=0`（组内 reward 有差异，可计算 advantage）→ **继续采用本机 TRL+MPS+GRPO 路线**。环境兜底 `MTL_TIMEOUT=0`+`PYTORCH_ENABLE_MPS_FALLBACK=1` 仍保留。
 
 ### 2. Qwen3 是 thinking 模型 → completion 不终止（改 prompt 预算）
 

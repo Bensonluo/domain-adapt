@@ -122,7 +122,7 @@ trainer = Trainer(model=model, args=training_args, train_dataset=dataset)
 trainer.train()
 ```
 
-结论：Trainer 内部做的事和 nanoGPT 一模一样（forward → loss → backward → clip → step），但额外封装了 logging、eval、save best、gradient accumulation、mixed precision、wandb、early stopping。你写 200 行的训练逻辑，Trainer 用配置项覆盖了。
+结论：Trainer 与 nanoGPT 的核心训练流程对应（forward → loss → backward → clip → step），并进一步封装了 logging、eval、save best、gradient accumulation、mixed precision、wandb 和 early stopping，将这些训练逻辑转换为配置与扩展接口。
 
 ### 总结
 

@@ -1,6 +1,6 @@
 # Week 13：DPO + GRPO 理论 + 数学推导
 
-> 实现边界纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。理论公式与本项目后续具体框架配置分开验收。
+> 实现边界纠错见 [`CORRECTIONS.md`](CORRECTIONS.md)。理论公式与本项目后续具体框架配置分别说明。
 
 > 目标: 深度理解 DPO/GRPO 的数学原理，精读 5 篇论文，手推 DPO loss。
 > 预计时间: 14-20 小时

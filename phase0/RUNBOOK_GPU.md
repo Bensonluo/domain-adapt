@@ -11,7 +11,7 @@ nvidia-smi
 python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 
 # 安装依赖 (如果镜像里没预装 torch,就取消注释第一行)
-cd /root/workspace/domain-adapt   # 你上传代码的路径
+cd /root/workspace/domain-adapt   # 服务器上的项目路径
 # pip install torch --index-url https://download.pytorch.org/whl/cu121
 pip install -r phase0/requirements-gpu.txt
 ```

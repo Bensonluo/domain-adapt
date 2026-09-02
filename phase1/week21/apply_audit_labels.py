@@ -124,7 +124,7 @@ def main() -> None:
         row["review_notes"] = INCORRECT.get(
             record_id, "Answer and explanation appear medically coherent for the stated question."
         )
-        row["reviewer"] = "Codex manual AI review (not clinician/human), 2026-08-24"
+        row["reviewer"] = "AI review (not clinician/human), 2026-08-24"
         row["reviewer_kind"] = "ai_nonclinician"
     write_jsonl(args.audit, rows)
     correct = sum(row["review_correct"] for row in rows)
